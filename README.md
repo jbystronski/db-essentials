@@ -7,8 +7,8 @@
     - [update](#update)
     - [delete](#delete)
 - [Server side](#server-side)
-- [Request flters](#request-flters)
-- [Response filters](#response-filters)
+- [Request filters](#request-filters)
+- [Response modifiers](#response-modifiers)
 - [Querying](#querying)
 - [Seeders](#seeders)
   - [Usage](#usage)
@@ -62,15 +62,17 @@ Where "find" is the requested database method and "users" is the target resource
 
 Current list of available database actions
 
-| Action     | Http Verb     | Description
-| ---------  | ------------- | -------------------------------------------------------------------------------- |
-| find       | GET           | Returns any number of records (all by default)
-| find_one   | GET           | Returns a single record
-| find_by_id | GET           | Returns a single record by _id field
-| count      | GET           | Returns the count of records
-| delete     | GET           | Deletes one or more records, based on the parameters
-| save       | POST          | Inserts one or more records
-| update     | PUT           | Updates one or more records
+| Action         | Http Verb     | Description
+| -------------- | ------------- | -------------------------------------------------------------------------------- |
+| find           | GET           | Returns any number of records (all by default), based on provided filters
+| find_one       | GET           | Returns a single record based on provided filters
+| count          | GET           | Returns the count of records
+| delete_one     | DELETE        | Deletes a record that matches the filters
+| delete_many    | DELETE        | Deletes all records that match the filters
+| save_one       | POST          | Inserts an object into the database
+| save_many      | POST          | Inserts an array of objects into the database
+| update_one     | PUT           | Updates the first record that matches the filters 
+| update_many    | PUT           | Updates all records that match the filters
 
 "save" and "update" calls should be sent with a http request body attached
 
@@ -134,9 +136,9 @@ Current list of available database actions
 
     const dataToUpdate = {
         _id: {
-            gt: 10
+            _gt: 10
         },
-        set: {
+        _set: {
             price: 144
         }
     }
@@ -196,7 +198,7 @@ Current list of available database actions
     
     const express = require("express");
     const app = express();
-    const {cachedConnection} = require('jb-nodejs-database-adapter')
+    const {cachedConnection} = require('@db-essentials')
 
     async function handler(req,res) {
 
@@ -204,7 +206,7 @@ Current list of available database actions
 
         try {
 
-            const db = await cachedConnection(pathToDbFiles, credentials = {}, 'local')
+            const db = await cachedConnection('local', {localPath: "/PATH/TO/DB_FILES"})
             
             const result = await db.run(url, body)
 
@@ -219,35 +221,35 @@ Current list of available database actions
 ```
 
 
-## Request flters
+## Request filters
 
 These are treated as reserved keywords and you should avoid using them as database table field names. 
 
-| Param    | Usage             | Description                                                                                              |
-| -------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
-| _id      | _id=              | Equal to resource _id field                                                                              |
-| gt       | field.gt=         | Greater than target                                                                                      |
-| lt       | field.lt=         | Lower than target                                                                                        |
-| min      | field.min=        | Equal or greater than target                                                                             |
-| max      | field.max=        | Equal or lower than target                                                                               |
-| contains | field.contains=   | Includes a target substring                                                                              |
-| in       | field.in=         | Equal to target or one of comma separated target values                                                  |
-| not_in   | field.not_in=     | Different than target or comma separated target values                                                   |
-| equals   | field.equals=     | Equal to target                                                                                          |
-| not      | field.not=        | Different than target                                                                                    |
+| Param           | Usage                | Description                                                                                              |
+| --------------- | -------------------- | -------------------------------------------------------------------------------------------------------- |
+| _id             | _id=                 | Equal to resource _id field                                                                              |
+| _gt             | field._gt=           | Greater than target                                                                                      |
+| _gte            | field._gte=          | Equal or greater than target                                                                             |
+| _lt             | field._lt=           | Lower than target                                                                                        |
+| _lte            | field._lte=          | Equal or lower than target                                                                               |
+| _contains       | field._contains=     | Includes a target substring                                                                              |
+| _in             | field._in=           | Equal to target or one of comma separated target values                                                  |
+| _not_in         | field._not_in=       | Different than target or comma separated target values                                                   |
+| _equals         | field._equals=       | Equal to target                                                                                          |
+| _not_equal      | field._not_equal=    | Different than target                                                                                    |
 
-## Response filters
+## Response modifiers
 
 These are treated as reserved keywords and you should avoid using them as database table field names. 
 
-| Param    | Usage                | Description                                                                                                                                                     |
-| -------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| only     | only=                | Specifies which fields should be included with the response. Accepts comma separated fields or a single field. Usage with 'except' in one query is prohibited.  |
-| except   | except=              | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Usage with 'only' in one query is prohibited.        |
-| skip     | skip=                | How many records to skip. Accepts an integer value.                                                                                                             |
-| limit    | limit=               | Caps results number to a specified integer value.                                                                                                               |
-| sort     | sort.field_name=     | Sorts data by a specified field, multiple sort params are allowed, should be either ASC or DESC                                                                 |                     
-| set      | set=                 | Includes a target substring                                                                                                                                     |
+| Param     | Usage                  | Description                                                                                                                                                     |
+| --------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| _only     | _only=                 | Specifies which fields should be included with the response. Accepts comma separated fields or a single field. Usage with 'except' in one query is prohibited.  |
+| _except   | _except=               | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Usage with 'only' in one query is prohibited.        |
+| _skip     | _skip=                 | How many records to skip. Accepts an integer value.                                                                                                             |
+| _limit    | _limit=                | Caps results number to a specified integer value.                                                                                                               |
+| _sort     | _sort.field_name=      | Sorts data by a specified field, multiple sort params are allowed, should be either 1 (ascending order) or -1 (descending oreder)                               |                     
+| _set      | _set=                  | Sets a value to target value                                                                                                                                    |
 
 
 ```js
@@ -258,15 +260,15 @@ These are treated as reserved keywords and you should avoid using them as databa
 
     // delete resources with specified _id's
 
-    apiCall = "/some_endpoint/resources/delete?_id.in=52,13,33"
+    apiCall = "/some_endpoint/resources/delete?_id._in=52,13,33"
 
     // get vehicles with _id value greater than 10 but without 20, maximum speed of 200, sort from lowest to highest speed and return only color and brand
 
-    apiCall = "/some_endpoint/find/vehicles?_id.gt=10&_id.not=20&speed.max=200&sort.speed=ASC&only=color,brand"
+    apiCall = "/some_endpoint/find/vehicles?_id._gt=10&_id.not=20&speed._lte=200&_sort.speed=ASC&_only=color,brand"
 
     // get a single resource filtered out by nested fields
 
-    apiCall = "/some_endpoint/find_one/products?price.min=20&department.category.subcategory=dolls"
+    apiCall = "/some_endpoint/find_one/products?price._lte=20&department.category.subcategory=dolls"
 
 ```
 
@@ -280,15 +282,15 @@ https://somedomain/find/users
 
 filter out some records
 
-https://somedomain/find/users?age.gt=30
+https://somedomain/find/users?age._gt=30
 
 limit
 
-https://somedomain/find/users?limit=4
+https://somedomain/find/users?_limit=4
 
 paginate
 
-https://somedomain/find/users?skip=10&limit=10
+https://somedomain/find/users?_skip=10&_limit=10
 
 
 ## Seeders
