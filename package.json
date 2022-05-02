@@ -1,0 +1,33 @@
+{
+    "name": "db-essentials",
+    "author": "Jakub Bystroński",
+    "version": "1.0.0",
+    "description": "Database abstraction layer for nodejs",
+    "main": "index.js",
+    "license": "MIT",
+    "engines": {
+        "node": ">=10"
+    },
+    "scripts": {
+        "test" : "mocha __tests__/index.test.js",
+        "seed" : "./bin/seed.js ./@dev/seeders ./@dev/test_files local ${table} ${count}"
+    },
+    "bin": {
+        "seed" : "./bin/seed.js"
+    },
+
+    "keywords": [
+        "adapter",
+        "database",
+        "local",
+        "mock",
+        "node",
+        "nodejs",
+        "nosql",
+        "test"
+    ],
+    "dependencies": {},
+    "devDependencies": {
+        "mocha": "^9.2.2"
+    }
+}
