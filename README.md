@@ -2,46 +2,46 @@
 - [Installation](#installation)
 - [Query building](#query-building)
 - [Available methods](#available-methods)
-- [Examples](#examples)
-    - [save](#save)
-    - [update](#update)
-    - [delete](#delete)
+  - [Examples](#examples)
+    - [Save](#save)
+    - [Update](#update)
+    - [Delete](#delete)
 - [Server side](#server-side)
 - [Request filters](#request-filters)
 - [Response modifiers](#response-modifiers)
 - [Querying](#querying)
+  - [General](#general)
+  - [Run from terminal](#run-from-terminal)
+    - [Usage](#usage)
+    - [Example](#example)
 - [Seeders](#seeders)
-  - [Usage](#usage)
-  - [Example](#example)
+  - [Usage](#usage-1)
+  - [Example](#example-1)
 
 
 
 ## Description
 
-What this package provides by default is to simulate an extraneous database, simply by creating a local json files to interact with. Practically it covers all basic and 
+In essence this package is a local database manager. Each database collection is stored as a JSON file. This serves an alternative if you don't want or for some reason can't hook up to an external database source. You can set your database to "local" or "no_persist" mode. The latter is a default setting, it ignores any modifications made to database records (like deleting, saving or updating records), however it still simulates them, so it's best for a real experience website previews in production. The "local" mode allows for complete data manipulation and it's best suited for development stage.
 
+The package itself is bare bones, it comes with no dependecy chain and regardless of that it still covers all basic to moderate database necessities.
+The 'no_persist' mode is best for website previews, when you want the user to perform certain actions that simulate real effect on records.
+Beacause it relies on internal sources only, data objects are build on the fly and it works quite fast, though shortcomings of this approach are obvious.
 
-To 
+As of recently, there is the db-essentials-mongo module available. It comes with the same unified api and allows to easily switch back and forth without no changes to the code. More implementations are considered. 
 
+  
 
-Benefits
-
-- unified API for all supported database drivers
-- no dependency chain in local mode
-- simulates a real database for testing or website preview 
-- abstraction layer that decouples your code from databse implementation
-- you can switch database provider with minimal or no changes to your code
-- database driver specific methods are accessible
 
 ## Installation
 
 ````bash
 
-    npm install --save
+    npm install db-essentials --save
 
     or
 
-    yarn add
+    yarn add db-essentials
 
 ````
 
@@ -77,13 +77,10 @@ Current list of available database actions
 "save" and "update" calls should be sent with a http request body attached
 
 
-## Examples
+### Examples
 
 
-
-
-
-#### save
+#### Save
 
 ```js
 
@@ -119,7 +116,7 @@ Current list of available database actions
                 }
 
 
-    const response = await fetch(`/some_endpoint/users/post`,{
+    const response = await fetch(`/some_endpoint/save_one/item`,{
         method: 'POST',
         body: JSON.stringify(single || multiple)
 
@@ -127,7 +124,7 @@ Current list of available database actions
 
 ```
 
-#### update
+#### Update
 
 
 ```js
@@ -151,7 +148,7 @@ Current list of available database actions
 
 ```
 
-#### delete
+#### Delete
 
 ```js
 
@@ -170,7 +167,7 @@ Current list of available database actions
     
     // with nextjs 
     
-    const {cachedConnection} = require('jb-nodejs-database-adapter')
+    const {cachedConnection} = require('@db-essentials')
 
     async function handler(req,res) {
 
@@ -178,7 +175,7 @@ Current list of available database actions
 
         try {
 
-            const db = await cachedConnection(pathToDbFiles, credentials = {}, 'local')
+            const db = await cachedConnection('local', {localPath: 'PATH/TO/LOCAL_DB_FILES})
             
             const result = await db.run(url, body)
 
@@ -223,20 +220,26 @@ Current list of available database actions
 
 ## Request filters
 
-These are treated as reserved keywords and you should avoid using them as database table field names. 
+These are treated as reserved keywords and you should avoid using them as database table field names.<br>Filters can access deep nested fields, as example: field.nested.nested._exists=true 
 
-| Param           | Usage                | Description                                                                                              |
-| --------------- | -------------------- | -------------------------------------------------------------------------------------------------------- |
-| _id             | _id=                 | Equal to resource _id field                                                                              |
-| _gt             | field._gt=           | Greater than target                                                                                      |
-| _gte            | field._gte=          | Equal or greater than target                                                                             |
-| _lt             | field._lt=           | Lower than target                                                                                        |
-| _lte            | field._lte=          | Equal or lower than target                                                                               |
-| _contains       | field._contains=     | Includes a target substring                                                                              |
-| _in             | field._in=           | Equal to target or one of comma separated target values                                                  |
-| _not_in         | field._not_in=       | Different than target or comma separated target values                                                   |
-| _equals         | field._equals=       | Equal to target                                                                                          |
-| _not_equal      | field._not_equal=    | Different than target                                                                                    |
+| Param           | Usage                      | Description                                                                                              |
+| --------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| _id             | _id=                       | Equal to resource _id field. You can chain filters: _id._in=1,2,3                                        |
+| _gt             | field._gt=                 | Greater than target                                                                                      |
+| _gte            | field._gte=                | Equal or greater than target                                                                             |
+| _lt             | field._lt=                 | Lower than target                                                                                        |
+| _lte            | field._lte=                | Equal or lower than target                                                                               |
+| _contains       | field._contains=           | Includes a target substring                                                                              |
+| _in             | field._in=                 | Equal to target or one of comma separated target values                                                  |
+| _not_in         | field._not_in=             | Different than target or comma separated target values                                                   |
+| _equals         | field._equals=             | Equal to target                                                                                          |
+| _not_equal      | field._not_equal=          | Different than target                                                                                    |
+| _exists         | field._exists=             | Checks if the value exists, "pass" true or "false"                                                       |
+| _type           | field._type=               | Checks if the value is of given type: string, null, date,  ...etc.<br>You can also pass an array of types to evaluate, field._type=null,date                                      |
+| _regex          | field._regex=              | Evaluates value based on a regex expression                                                              |
+| _all            | field._all=v1,v2,v3,...    | Checks if an array field contains all requested values                                                   |
+| _array_size     | field._array_size=[num]    | Checks if the array field is of specified size                                                           | 
+
 
 ## Response modifiers
 
@@ -248,9 +251,11 @@ These are treated as reserved keywords and you should avoid using them as databa
 | _except   | _except=               | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Usage with 'only' in one query is prohibited.        |
 | _skip     | _skip=                 | How many records to skip. Accepts an integer value.                                                                                                             |
 | _limit    | _limit=                | Caps results number to a specified integer value.                                                                                                               |
-| _sort     | _sort.field_name=      | Sorts data by a specified field, multiple sort params are allowed, should be either 1 (ascending order) or -1 (descending oreder)                               |                     
-| _set      | _set=                  | Sets a value to target value                                                                                                                                    |
-
+| _sort     | _sort.fieldName=       | Sorts data by a specified field, multiple sort params are allowed, should be either 1 (ascending order) or -1 (descending oreder)                               |                     
+| _set      | _set=                  | Sets a value to the target value                                                                                                                                |
+| _and      | _and.field=            | All fields must match the query: _and.name=someName&_and.value._gt=4                                                                                            | 
+| _or       | _or.field=             | Specifies alternative filters and returns the first match: _or.fieldName=value&_or.orOtherField._gt=4                                                           |
+| _nor      | _nor.field=            | No field can match the query: _nor.name=book&_nor.price._gt=19.99                                                                                               |
 
 ```js
 
@@ -276,6 +281,8 @@ These are treated as reserved keywords and you should avoid using them as databa
 
 ## Querying
 
+### General
+
 get all records
 
 https://somedomain/find/users
@@ -284,13 +291,44 @@ filter out some records
 
 https://somedomain/find/users?age._gt=30
 
-limit
 
-https://somedomain/find/users?_limit=4
-
-paginate
+paginatation example
 
 https://somedomain/find/users?_skip=10&_limit=10
+
+
+### Run from terminal
+
+#### Usage
+
+Include this line in you package json scripts
+
+```json
+
+    // you can name the command anything you want, in this example it's just query
+
+    {
+        "scripts" : {
+            // other scripts
+            "query" : "db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=local
+        }
+    }
+
+
+```
+#### Example
+
+```js
+
+    npm run
+
+    // or
+
+    yarn query find/users?_only=name,age&_limit=15 true
+
+    // pass true at the end if you want to see the result as a string, otherwise you can leave it
+
+```
 
 
 ## Seeders
