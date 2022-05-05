@@ -1,5 +1,5 @@
-describe("Parser tests", () => {
+describe("Package tests", () => {
   require("./Parser.test");
   require("./TestDatabase.test");
-  require("./TestDatabaseWithPersistence.test");
+  require("./LocalParser.test");
 });

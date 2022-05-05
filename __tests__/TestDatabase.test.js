@@ -2,10 +2,10 @@ const assert = require("assert").strict;
 
 const cachedConnection = require("../src/cachedConnection");
 
-describe("Testing queries with search params, without body", () => {
+describe("Testing TestDatabase class", () => {
   it("Should return an array of two records", async () => {
     const db = await cachedConnection();
-    const url = "/find/test_data?limit=2&except=nested";
+    const url = "/find/test_data?_limit=2&_except=nested";
     const res = await db.run(url);
     assert.deepEqual(res, [
       {
@@ -33,7 +33,7 @@ describe("Testing queries with search params, without body", () => {
     const url =
       "/find/test_data?nested.hidden.value=" +
       value +
-      "&only=nested.hidden.value";
+      "&_only=nested.hidden.value";
     const res = await db.run(url);
     assert.deepEqual(res, [
       {
@@ -46,50 +46,27 @@ describe("Testing queries with search params, without body", () => {
       }
     ]);
   });
-});
 
-describe("Getting table name", () => {
   it("Should return table name string", async () => {
     const db = await cachedConnection();
     db.run("https://somedomain/find/users");
     assert.equal(db.table, "users");
   });
-});
 
-describe("Getting database action method name", () => {
-  it("Should return action name string", async () => {
-    const db = await cachedConnection();
-    assert.equal(db.matchAction("save"), "insert");
-    assert.equal(db.matchAction("paginate"), "find");
-    assert.equal(db.matchAction("save_many"), "insert");
-  });
-});
-
-describe("Getting the url", () => {
   it("Should return url string", async () => {
     const db = await cachedConnection();
     assert.equal(db.url, "https://somedomain/find/users");
   });
-});
 
-describe("Filter functions test", () => {
-  it("Should return false, true based on the input", async () => {
+  it("Should return action name string", async () => {
     const db = await cachedConnection();
+    assert.equal(db.matchAction("save_one"), "insert");
 
-    assert.equal(
-      db.filterFunctions("not_in", ["toy", "food", "book"], "hand"),
-      true
-    );
-    assert.equal(db.filterFunctions("contains", "sha", "shield"), false);
-    assert.equal(db.filterFunctions("contains", "pi", "black"), false);
-    assert.equal(db.filterFunctions("not", "book", "hand"), true);
-    assert.equal(db.filterFunctions("gt", 3, 14), true);
-    assert.equal(db.filterFunctions("lt", 3, 14), false);
-    assert.equal(db.filterFunctions("lt", 17, 2), true);
-    assert.equal(db.filterFunctions("min", 17, 2), false);
-    assert.equal(db.filterFunctions("min", 2, 2), true);
-    assert.equal(db.filterFunctions("max", 2, 10), false);
-    assert.equal(db.filterFunctions("max", 22, 10), true);
-    assert.equal(db.filterFunctions("equals", "milk", "milk"), true);
+    assert.equal(db.matchAction("save_many"), "insert");
+  });
+
+  it("Should return cached connection", async () => {
+    const db = await cachedConnection();
+    assert.equal(db.isCached, true);
   });
 });
