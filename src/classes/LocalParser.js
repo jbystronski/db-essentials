@@ -1,4 +1,5 @@
 const Parser = require("./Parser");
+const ErrorHandler = require("../errors/ErrorHandler");
 
 module.exports = class LocalParser extends Parser {
   constructor(params, body, data) {
@@ -11,37 +12,84 @@ module.exports = class LocalParser extends Parser {
       "_contains",
       "_equals",
       "_in",
-      "_not",
+      "_not_equal",
       "_not_in",
       "_gt",
-      "_min",
+      "_gte",
       "_lt",
-      "_max"
+      "_lte",
+      "_exists",
+      "_type",
+      "_regex",
+      "_array_all",
+      "_array_size",
+      "_array_match",
+      "_not"
     ];
   }
 
   filterFunctions(fName, compare, value) {
+    console.log("function", fName);
+    console.log("compare", compare);
+    console.log("value", value);
+
     try {
       const fns = {
         _in: () => compare.includes(value),
         _contains: () => value.includes(compare),
-        _not_in: () => !value.includes(compare),
-        _not: () => value !== compare,
+        _not: () => {
+          console.log("_not compare", compare);
+          console.log("_not val", val);
+        },
+        _not_in: () => !compare.includes(value),
+        _not_equal: () => value !== compare,
         _gt: () => value > compare,
         _lt: () => value < compare,
-        _min: () => value >= compare,
-        _max: () => value <= compare,
-        _equals: () => value === compare
+        _gte: () => value >= compare,
+        _lte: () => value <= compare,
+        _equals: () => value === compare,
+        _type: () => this.isType(value, compare),
+        _regex: () => {
+          const split = compare.split("/").filter((el) => el !== "");
+
+          const pattern = new RegExp(split[0], split[1]);
+
+          return value.match(pattern);
+        },
+        _array_all: () => {
+          if (Array.isArray(value) && Array.isArray(compare)) {
+            return !compare
+              .reduce(
+                (acc, curr) =>
+                  value.includes(curr) ? [...acc, true] : [...acc, false],
+                []
+              )
+              .includes(false);
+          }
+          return false;
+        },
+        _array_size: () => {
+          if (!Array.isArray(value)) {
+            return false;
+          }
+
+          return value.length === compare;
+        },
+        _array_match: () => {
+          return Array.isArray(value) && value.includes(compare);
+        },
+        _exists: () =>
+          compare === true ? value !== undefined : value === undefined
       };
 
       return fns[fName]();
     } catch (e) {
-      throw new Error(e);
+      return this.getError(e);
     }
   }
 
   filterData(record, filters, parentKey, matches = []) {
-    if (!Object.keys(filters).length) return true;
+    if (!Object.keys(filters).length) return [true];
 
     try {
       for (const [k, v] of Object.entries(filters)) {
@@ -59,9 +107,9 @@ module.exports = class LocalParser extends Parser {
           : matches.push(record[k] === v ? true : false);
       }
 
-      return matches.includes(false) ? false : record;
-    } catch (error) {
-      throw new Error(error);
+      return matches;
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -76,8 +124,8 @@ module.exports = class LocalParser extends Parser {
       });
 
       return container;
-    } catch (error) {
-      throw new Error(error);
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -94,8 +142,8 @@ module.exports = class LocalParser extends Parser {
       const startIndex = this.getQueryProp("_skip") || 0;
 
       this.copy = this.copy.splice(startIndex, limit);
-    } catch (error) {
-      throw new Error(error);
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -110,8 +158,8 @@ module.exports = class LocalParser extends Parser {
       }
 
       this.copy = this.copy.splice(skip);
-    } catch (error) {
-      throw new Error(error);
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -131,8 +179,8 @@ module.exports = class LocalParser extends Parser {
       for (const record of this.copy) {
         this.include(record, keysToInclude);
       }
-    } catch (error) {
-      throw new Error(error);
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -164,8 +212,8 @@ module.exports = class LocalParser extends Parser {
       }
 
       return record;
-    } catch (error) {
-      throw new Error(error);
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -174,8 +222,8 @@ module.exports = class LocalParser extends Parser {
       const last = keys.pop();
       delete keys.reduce((o, k) => o[k] !== undefined && o[k], object)[last];
       return object;
-    } catch (error) {
-      throw new Error(error);
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -186,8 +234,8 @@ module.exports = class LocalParser extends Parser {
       }
 
       return record;
-    } catch (error) {
-      throw new Error(error);
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -204,8 +252,8 @@ module.exports = class LocalParser extends Parser {
       for (const record of this.copy) {
         this.exclude(record, keysToExclude);
       }
-    } catch (error) {
-      throw new Error(error);
+    } catch (e) {
+      return this.getError(e);
     }
   }
 
@@ -222,8 +270,6 @@ module.exports = class LocalParser extends Parser {
       return 0;
     };
 
-    console.log("this sort", this.queryObject);
-
     for (const sortKey in this.getQueryProp("_sort")) {
       this.copy.sort((a, b) =>
         compare(a[sortKey], b[sortKey], this.getQueryProp("_sort")[sortKey])
@@ -231,105 +277,189 @@ module.exports = class LocalParser extends Parser {
     }
   }
 
+  _nor() {
+    if (!this.copy.length) return;
+
+    const nor = this.getQueryProp("_nor");
+
+    Array.isArray(nor)
+      ? nor.forEach((condition) => {
+          this.copy = this.copy.filter(
+            (rec) => !this.filterData(rec, condition).includes(true)
+          );
+        })
+      : (this.copy = this.copy.filter(
+          (rec) => !this.filterData(rec, nor).includes(true)
+        ));
+  }
+
+  _and() {
+    if (!this.copy.length) return;
+
+    const and = this.getQueryProp("_and");
+
+    console.log("copy in and", this.copy);
+
+    Array.isArray(and)
+      ? and.forEach((condition) => {
+          this.copy = this.copy.filter(
+            (r) => !this.filterData(r, condition).includes(false)
+          );
+        })
+      : (this.copy = this.copy.filter(
+          (r) => !this.filterData(r, and).includes(false)
+        ));
+  }
+
+  _or() {
+    if (!this.copy.length) return;
+
+    const and = this.getQueryProp("_or");
+
+    console.log("copy in or", this.copy);
+
+    const found = [];
+
+    Array.isArray(and)
+      ? or.forEach((condition) => {
+          const match = this.copy.filter((r) =>
+            this.filterData(r, condition).includes(true)
+          );
+
+          found.indexOf(...match) === -1 && found.push(...match);
+        })
+      : (found = this.copy.filter((r) =>
+          this.filterData(r, and).includes(true)
+        ));
+
+    this.copy = found;
+  }
+
+  _or() {
+    if (!this.copy.length) return;
+
+    this.copy = this.copy.filter((rec) =>
+      this.filterData(rec, this.getQueryProp("_or")).includes(true)
+    );
+  }
+
+  _date() {
+    console.log(this.getQueryProp("_date"));
+  }
+
   async _parseSearchable() {
     try {
-      if (this.filtersObject) {
-        this.copy = JSON.parse(JSON.stringify(this.data));
+      this.copy = JSON.parse(JSON.stringify(this.data));
 
-        this.copy = this.copy.filter((current) =>
-          this.filterData(current, this.filtersObject)
+      for (const fn of this.precedenceParsersQueue) {
+        this[fn]();
+      }
+
+      if (this.filtersObject) {
+        this.copy = this.copy.filter(
+          (current) =>
+            !this.filterData(current, this.filtersObject).includes(false)
         );
       }
 
-      for (const fn of this.getQueue()) {
+      for (const fn of this.afterParsersQueue) {
         this[fn]();
       }
       return this.copy;
     } catch (e) {
-      throw new Error(e);
+      return this.getError(e);
     }
   }
 
   async _parseUpdateMany() {
-    console.log("FILTERS", this.getFiltersObject());
-    console.log("data after update", this.getQueryProp("_set"));
-
-    return this.data.map((record) => {
-      if (this.filterData(record, this.getFiltersObject())) {
-        console.log("RECORD PASSED FILTER", record);
-        return this.mergeObjects([record, this.getQueryProp("_set")]);
-      } else {
-        return record;
-      }
-    });
+    try {
+      return this.data.map((record) => {
+        if (!this.filterData(record, this.getFiltersObject()).includes(false)) {
+          return this.mergeObjects([record, this.getQueryProp("_set")]);
+        } else {
+          return record;
+        }
+      });
+    } catch (e) {
+      return this.getError(e);
+    }
   }
 
   async _parseUpdateOne() {
-    let counter = 0;
-    console.log("FILTERS", this.getFiltersObject());
-    console.log("data after update", this.getQueryProp("_set"));
+    try {
+      let counter = 0;
+      return this.data.map((record) => {
+        if (counter === 1) {
+          return record;
+        } else {
+          if (
+            !this.filterData(record, this.getFiltersObject()).includes(false)
+          ) {
+            const merged = this.mergeObjects([
+              record,
+              this.getQueryProp("_set")
+            ]);
 
-    return this.data.map((record) => {
-      if (counter === 1) {
-        return record;
-      } else {
-        if (this.filterData(record, this.getFiltersObject())) {
-          const merged = this.mergeObjects([record, this.getQueryProp("_set")]);
-          console.log("MERGED", merged);
-          counter++;
-          return merged;
+            counter++;
+            return merged;
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      return this.getError(e);
+    }
   }
 
   async _parseInsertable() {
-    console.log("WHOLE", this);
-    const f = this.getFiltersObject();
+    try {
+      // if we have a single object instead of an array of objects to save, we push that one object to a new array
 
-    console.log("inserting gi", f);
+      const arrToSave =
+        "_save" in f && Array.isArray(f["_save"]) ? f["_save"] : [f];
 
-    // if we have a single object instead of an array of objects to save, we push that one object to a new array
+      let lastId = this.data.length
+        ? this.data[this.data.length - 1]["_id"] + 1
+        : 1;
 
-    const arrToSave =
-      "_save" in f && Array.isArray(f["_save"]) ? f["_save"] : [f];
+      arrToSave.forEach((el) => {
+        el["_id"] = lastId;
+        lastId++;
+      });
 
-    console.log("ARR TO SAVE", arrToSave);
-
-    let lastId = this.data.length
-      ? this.data[this.data.length - 1]["_id"] + 1
-      : 1;
-
-    arrToSave.forEach((el) => {
-      el["_id"] = lastId;
-      lastId++;
-    });
-
-    console.log("TO SAVE", arrToSave);
-    return [...this.data, ...arrToSave];
+      return [...this.data, ...arrToSave];
+    } catch (e) {
+      return this.getError(e);
+    }
   }
 
   async _parseDeleteOne() {
-    console.log("PARSING DELETE ONE");
-    let counter = 0;
-
-    return this.data.filter((record) => {
-      if (counter === 1) {
-        return record;
-      } else {
-        if (this.filterData(record, this.getFiltersObject())) {
-          console.log("_id", record["_id"]);
-          counter++;
+    try {
+      let counter = 0;
+      return this.data.filter((record) => {
+        if (counter === 1) {
+          return record;
+        } else {
+          if (
+            !this.filterData(record, this.getFiltersObject()).includes(false)
+          ) {
+            counter++;
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      return this.getError(e);
+    }
   }
 
   async _parseDeleteMany() {
-    return this.data.filter((record) => {
-      if (!this.filterData(record, this.getFiltersObject())) {
-        return record;
-      }
-    });
+    try {
+      return this.data.filter((record) => {
+        if (this.filterData(record, this.getFiltersObject()).includes(false)) {
+          return record;
+        }
+      });
+    } catch (e) {
+      return this.getError(e);
+    }
   }
 };
