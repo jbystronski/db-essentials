@@ -3,7 +3,7 @@
 const path = require("path");
 const getDatabaseClient = require("../src/getDatabaseClient");
 
-const [seederFilesPath, databasePath, mode, table, count = 1] =
+const [seederFilesPath, database, mode, table, count = 1] =
   process.argv.slice(2);
 
 const fromPattern = require(path.resolve(seederFilesPath) + `/${table}.js`);
@@ -15,7 +15,6 @@ async function build(times, container = []) {
       return Array.isArray(container[0]) ? [...container[0]] : container;
     }
     const records = await fromPattern();
-    console.log("rec", records);
 
     container.push(records);
 
@@ -38,38 +37,23 @@ try {
   (async function () {
     const DbClient = getDatabaseClient(mode);
 
-    const db = new DbClient(resolveClientConfig(mode));
+    const db = new DbClient(database);
 
     const conn = await db.establishConnection();
-
+    console.log("db", conn);
     console.time("Time");
 
     const seederPayload = await build(count);
-    console.log("inside seedfer");
+
     const toSave =
       seederPayload.length > 1 ? { _save: seederPayload } : seederPayload[0];
     const method = seederPayload.length > 1 ? "save_many" : "save_one";
 
-    console.log("payload", toSave);
     await conn.run(`${method}/${table}`, toSave);
-    console.log(toSave);
+
     console.log("Created documents: " + count);
     console.timeEnd("Time");
   })();
 } catch (e) {
   throw new Error(e);
-}
-
-function resolveClientConfig(mode) {
-  switch (mode) {
-    case "local":
-      return { localPath: path.resolve(databasePath) };
-    case "mongo":
-      const [host, db, schemas] = databasePath.split(",");
-      return {
-        host: host.replace("host=", ""),
-        database: db.replace("db=", ""),
-        schemas: require(path.resolve(schemas.replace("schemas=", "")))
-      };
-  }
 }
