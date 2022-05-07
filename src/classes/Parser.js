@@ -2,39 +2,35 @@ const ErrorHandler = require("../errors/ErrorHandler");
 
 module.exports = class Parser {
   constructor(params = null, bodyObject = null) {
+    this.afterParsersQueue = [];
+    this.bodyObject = bodyObject;
+    this.filtersObject = {};
+    this.params = params;
     this.parserQueue = [];
     this.precedenceParsersQueue = [];
-    this.afterParsersQueue = [];
-    this.filtersObject = {};
     this.queryObject = {};
-    this.bodyObject = bodyObject;
-    this.params = params;
-
-    this.parseFunctions = [
-      "_date",
-      "_nor",
-      "_and",
-      "_or",
-      "_sort",
-      "_limit",
-      "_skip",
-      "_only",
-      "_except",
-      "_set"
-    ];
 
     this.precedenceParsers = ["_or", "_nor", "_and"];
     this.afterParsers = [
-      "_date",
-      "_sort",
-      "_skip",
+      "_array_slice",
+      "_cdate",
+      "_except",
+      "_inc",
       "_limit",
       "_only",
-      "_except",
-      "_set"
+      "_skip",
+      "_slice",
+      "_sort"
     ];
 
-    this.arrayKeywords = ["_in", "_not_in", "_only", "_except", "_array_all"];
+    this.arrayKeywords = [
+      "_array_all",
+      "_except",
+      "_in",
+      "_not_in",
+      "_only",
+      "_slice"
+    ];
   }
 
   getError(e) {
@@ -51,6 +47,17 @@ module.exports = class Parser {
     } catch (e) {
       return this.getError(e);
     }
+  }
+
+  getObjectValue(keys, ob) {
+    if (!keys) return;
+    keys = !Array.isArray(keys) ? keys.split(".") : keys;
+
+    return keys.reduce((p, c) => (p && p[c]) || null, ob);
+  }
+
+  copyObjectProperty(str, origin) {
+    return this.objectFromString(str, this.getObjectValue(str, origin));
   }
 
   isType(v, type) {
@@ -77,7 +84,7 @@ module.exports = class Parser {
     return !isNaN(str) && !isNaN(parseFloat(str));
   }
 
-  unstringify(v, k) {
+  parseValue(v, k) {
     if (typeof v !== "string") return v;
 
     // is value comma separated , if so turn into array
@@ -128,8 +135,11 @@ module.exports = class Parser {
     }
   };
 
-  objectFromString(keyparts, value = {}) {
-    return keyparts.reduceRight((acc, currentValue) => {
+  objectFromString(keys, value = {}) {
+    if (!keys) return;
+    keys = !Array.isArray(keys) ? keys.split(".") : keys;
+
+    return keys.reduceRight((acc, currentValue) => {
       return { [currentValue]: acc };
     }, value);
   }
@@ -138,16 +148,23 @@ module.exports = class Parser {
     return this.arrayKeywords.includes(k);
   }
 
+  stringifyPath(obj, p = "") {
+    const k = Object.keys(obj);
+
+    return this.isType(obj[k], "object")
+      ? this.stringifyPath(obj[k], p + k + ".")
+      : [p + k, obj[k]];
+  }
+
   paramParser(params, container = {}) {
     try {
       for (const [index, param] of params.entries()) {
         let [k, v] = param.split("=");
-        const valueFromString = this.unstringify(v, k);
+        const parsedValue = this.parseValue(v, k);
         let kparts = k.split(".");
-        // console.log(kparts.reverse()[0]);
-        // v = this.needsArray(kparts.reverse()[0]) ? v.split(",") : v;
+
         if (kparts.length === 1) {
-          container[kparts[0]] = valueFromString;
+          container[kparts[0]] = parsedValue;
         } else {
           if (["_nor", "_or", "_and"].includes(kparts[0])) {
             if (!container.hasOwnProperty(kparts[0])) {
@@ -156,12 +173,12 @@ module.exports = class Parser {
 
             container[kparts[0]] = [
               ...container[kparts[0]],
-              this.objectFromString(kparts.slice(1), valueFromString)
+              this.objectFromString(kparts.slice(1), parsedValue)
             ];
           } else {
             container[kparts[0]] = this.mergeObjects([
               container[kparts[0]],
-              this.objectFromString(kparts.slice(1), valueFromString)
+              this.objectFromString(kparts.slice(1), parsedValue)
             ]);
           }
         }
@@ -176,7 +193,6 @@ module.exports = class Parser {
     try {
       if (this.params) {
         this.queryObject = this.paramParser(this.params);
-        console.log("parsed", this.queryObject);
       }
 
       this.queryObject = this.bodyObject
@@ -191,10 +207,6 @@ module.exports = class Parser {
 
         this.afterParsers.includes(k) && this.afterParsersQueue.push(k);
       });
-
-      // Object.keys(this.queryObject).forEach((k) => {
-      //   this.afterParsers.includes(k) && this.afterParsersQueue.push(k);
-      // });
 
       // shift some functions from queries object to filters object
       for (const k of Object.keys(this.queryObject)) {

@@ -1,46 +1,60 @@
 const Parser = require("./Parser");
-const ErrorHandler = require("../errors/ErrorHandler");
 
 module.exports = class LocalParser extends Parser {
   constructor(params, body, data) {
     super(params, body);
 
     this.data = data;
-    this.copy = [];
+    this.copy;
 
     this.reservedFilterKeywords = [
-      "_contains",
+      "_array_all",
+      "_array_match",
+      "_array_size",
       "_equals",
-      "_in",
-      "_not_equal",
-      "_not_in",
+      "_exists",
       "_gt",
       "_gte",
+      "_in",
       "_lt",
       "_lte",
-      "_exists",
-      "_type",
+      "_not_equal",
+      "_not_in",
       "_regex",
-      "_array_all",
-      "_array_size",
-      "_array_match",
-      "_not"
+      "_type"
     ];
   }
 
-  filterFunctions(fName, compare, value) {
-    console.log("function", fName);
-    console.log("compare", compare);
-    console.log("value", value);
+  filterData(record, filters, parentKey, matches = []) {
+    if (!Object.keys(filters).length) return [true];
 
+    try {
+      for (const [k, v] of Object.entries(filters)) {
+        this.isType(v, "object")
+          ? this.filterData(
+              this.isType(record[k], "object") ? record[k] : record,
+              v,
+              k,
+              matches
+            )
+          : this.reservedFilterKeywords.includes(k)
+          ? matches.push(
+              this.filterFunctions(k, v, record[parentKey]) ? true : false
+            )
+          : matches.push(record[k] === v ? true : false);
+      }
+
+      return matches;
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  filterFunctions(fName, compare, value) {
     try {
       const fns = {
         _in: () => compare.includes(value),
-        _contains: () => value.includes(compare),
-        _not: () => {
-          console.log("_not compare", compare);
-          console.log("_not val", val);
-        },
+
         _not_in: () => !compare.includes(value),
         _not_equal: () => value !== compare,
         _gt: () => value > compare,
@@ -88,37 +102,16 @@ module.exports = class LocalParser extends Parser {
     }
   }
 
-  filterData(record, filters, parentKey, matches = []) {
-    if (!Object.keys(filters).length) return [true];
-
-    try {
-      for (const [k, v] of Object.entries(filters)) {
-        this.isType(v, "object")
-          ? this.filterData(
-              this.isType(record[k], "object") ? record[k] : record,
-              v,
-              k,
-              matches
-            )
-          : this.reservedFilterKeywords.includes(k)
-          ? matches.push(
-              this.filterFunctions(k, v, record[parentKey]) ? true : false
-            )
-          : matches.push(record[k] === v ? true : false);
-      }
-
-      return matches;
-    } catch (e) {
-      return this.getError(e);
-    }
+  getDataCopy() {
+    return this.copy;
   }
 
-  recursiveKeys(obj, container = [], previousKey = "") {
+  getAllObjectKeys(obj, container = [], previousKey = "") {
     try {
       Object.entries(obj).forEach(([key, values]) => {
         let keyRes = previousKey ? `${previousKey}.${key}` : key;
         if (this.isType(values, "object"))
-          this.recursiveKeys(values, container, keyRes);
+          this.getAllObjectKeys(values, container, keyRes);
 
         container.push(keyRes);
       });
@@ -129,35 +122,163 @@ module.exports = class LocalParser extends Parser {
     }
   }
 
-  _limit() {
-    if (!this.copy.length) return;
+  runInitialParsing() {
     try {
-      const limit = this.getQueryProp("_limit");
-
-      if (typeof limit !== "number") {
-        console.error(`"limit" must be a number, got ${typeof limit}`);
-        return;
+      this.setDataCopy();
+      for (const fn of this.precedenceParsersQueue) {
+        this[fn]();
       }
-
-      const startIndex = this.getQueryProp("_skip") || 0;
-
-      this.copy = this.copy.splice(startIndex, limit);
     } catch (e) {
       return this.getError(e);
     }
   }
 
+  setDataCopy() {
+    this.copy = JSON.parse(JSON.stringify(this.data));
+  }
+
+  _and() {
+    if (!this.copy.length) return;
+
+    const and = this.getQueryProp("_and");
+
+    Array.isArray(and)
+      ? and.forEach((condition) => {
+          this.copy = this.copy.filter(
+            (r) => !this.filterData(r, condition).includes(false)
+          );
+        })
+      : (this.copy = this.copy.filter(
+          (r) => !this.filterData(r, and).includes(false)
+        ));
+  }
+
   _skip() {
     if (!this.copy.length) return;
     try {
-      const skip = this.getQueryProp("_skip");
+      this.copy = this.copy.slice(this.getQueryProp("_skip"));
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
 
-      if (typeof skip !== "number") {
-        console.error(`"skip" must be a number, got ${typeof skip}`);
-        return;
+  modifyObjectProperty(src, ob, modifier) {
+    return src.split(".").reduce((acc, prop) => {
+      if (prop in acc) {
+        if (!this.isType(acc[prop], "object")) {
+          acc[prop] = this.isType(modifier, "function")
+            ? modifier(acc[prop])
+            : modifier;
+        } else {
+          return this.modifyObjectProperty(prop, acc[prop], modifier);
+        }
       }
+      return ob;
+    }, ob);
+  }
 
-      this.copy = this.copy.splice(skip);
+  _array_slice() {
+    try {
+      const [props, slice] = this.stringifyPath(
+        this.getQueryProp("_array_slice")
+      );
+      console.log("Array slice", props);
+      console.log("Array slice", slice);
+      this.copy = this.copy.map((rec) =>
+        this.modifyObjectProperty(props, rec, (v) =>
+          Array.isArray(v) ? v.slice(0, slice) : v
+        )
+      );
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  _inc() {
+    try {
+      const [dottedProps, inc] = this.stringifyPath(this.getQueryProp("_inc"));
+
+      this.copy = this.copy.map((rec) =>
+        this.modifyObjectProperty(dottedProps, rec, (v) => v + inc)
+      );
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  _cdate() {
+    try {
+      const [dottedProps, type] = this.stringifyPath(
+        this.getQueryProp("_cdate")
+      );
+
+      const path = dottedProps.split(".").slice(0, -1).join(".");
+      const date = type === "timestamp" ? Date.now() : new Date();
+
+      this.copy = this.copy.map((rec) =>
+        this.modifyObjectProperty(path, rec, date)
+      );
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  _limit() {
+    if (!this.copy.length) return;
+    try {
+      this.copy = this.copy.slice(0, this.getQueryProp("_limit"));
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  _slice() {
+    if (!this.copy.length) return;
+    const s = this.getQueryProp("_slice");
+    try {
+      this.copy = this.copy.slice(s[0], s[0] + s[1]);
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  _nor() {
+    if (!this.copy.length) return;
+
+    const nor = this.getQueryProp("_nor");
+
+    Array.isArray(nor)
+      ? nor.forEach((condition) => {
+          this.copy = this.copy.filter(
+            (rec) => !this.filterData(rec, condition).includes(true)
+          );
+        })
+      : (this.copy = this.copy.filter(
+          (rec) => !this.filterData(rec, nor).includes(true)
+        ));
+  }
+
+  deleteKey(object, keys) {
+    try {
+      const last = keys.pop();
+      delete keys.reduce((o, k) => o[k] !== undefined && o[k], object)[last];
+      return object;
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  _except() {
+    if (!this.copy.length) return;
+    try {
+      if (this.getQueryProp("_only")) {
+        throw new Error(`'only' and 'except' cannot be used in the same query`);
+      }
+      const except = this.getQueryProp("_except");
+
+      for (const [k, v] of this.copy.entries()) {
+        this.copy[k] = except.map((prop) => this.deleteKey(v, prop.split(".")));
+      }
     } catch (e) {
       return this.getError(e);
     }
@@ -172,89 +293,38 @@ module.exports = class LocalParser extends Parser {
 
       const only = this.getQueryProp("_only");
 
-      const keysToInclude = Array.isArray(only) ? only : [only];
+      only.push("_id");
 
-      keysToInclude.push("_id");
-
-      for (const record of this.copy) {
-        this.include(record, keysToInclude);
+      for (const [k, v] of this.copy.entries()) {
+        this.copy[k] = only
+          .map((prop) => this.copyObjectProperty(prop, v))
+          .reduce((acc, curr) => this.mergeObjects([acc, curr]), {});
       }
     } catch (e) {
       return this.getError(e);
     }
   }
 
-  include(record, keysToInclude) {
-    try {
-      const keysToIncludeWithParentKeys = [];
-      keysToInclude.forEach((key) => {
-        const split = key.split(".");
-        if (split.length > 1) {
-          let count = split.length;
-          while (count !== 0) {
-            const k = split.slice(0, count).join(".");
-            !keysToIncludeWithParentKeys.includes(k) &&
-              keysToIncludeWithParentKeys.push(k);
-
-            count--;
-          }
-        } else {
-          keysToIncludeWithParentKeys.push(split[0]);
-        }
-      });
-
-      const keysToDelete = this.recursiveKeys(record)
-        .sort()
-        .filter((k) => !keysToIncludeWithParentKeys.includes(k));
-
-      for (const [k, v] of keysToDelete.entries()) {
-        this.deleteKey(record, v.split("."));
-      }
-
-      return record;
-    } catch (e) {
-      return this.getError(e);
-    }
-  }
-
-  deleteKey(object, keys) {
-    try {
-      const last = keys.pop();
-      delete keys.reduce((o, k) => o[k] !== undefined && o[k], object)[last];
-      return object;
-    } catch (e) {
-      return this.getError(e);
-    }
-  }
-
-  exclude(record, keysToExclude) {
-    try {
-      for (const [k, v] of keysToExclude.entries()) {
-        this.deleteKey(record, v.split("."));
-      }
-
-      return record;
-    } catch (e) {
-      return this.getError(e);
-    }
-  }
-
-  _except() {
+  _or() {
     if (!this.copy.length) return;
-    try {
-      if (this.getQueryProp("_only")) {
-        throw new Error(`'only' and 'except' cannot be used in the same query`);
-      }
-      const except = this.getQueryProp("_except");
 
-      const keysToExclude = Array.isArray(except) ? except : [except];
+    const or = this.getQueryProp("_or");
 
-      for (const record of this.copy) {
-        this.exclude(record, keysToExclude);
-      }
-    } catch (e) {
-      return this.getError(e);
-    }
+    const found = [];
+
+    Array.isArray(or)
+      ? or.forEach((condition) => {
+          const match = this.copy.filter((r) =>
+            this.filterData(r, condition).includes(true)
+          );
+
+          found.indexOf(...match) === -1 && found.push(...match);
+        })
+      : (found = this.copy.filter((r) =>
+          this.filterData(r, or).includes(true)
+        ));
+
+    this.copy = found;
   }
 
   _sort() {
@@ -277,83 +347,9 @@ module.exports = class LocalParser extends Parser {
     }
   }
 
-  _nor() {
-    if (!this.copy.length) return;
-
-    const nor = this.getQueryProp("_nor");
-
-    Array.isArray(nor)
-      ? nor.forEach((condition) => {
-          this.copy = this.copy.filter(
-            (rec) => !this.filterData(rec, condition).includes(true)
-          );
-        })
-      : (this.copy = this.copy.filter(
-          (rec) => !this.filterData(rec, nor).includes(true)
-        ));
-  }
-
-  _and() {
-    if (!this.copy.length) return;
-
-    const and = this.getQueryProp("_and");
-
-    console.log("copy in and", this.copy);
-
-    Array.isArray(and)
-      ? and.forEach((condition) => {
-          this.copy = this.copy.filter(
-            (r) => !this.filterData(r, condition).includes(false)
-          );
-        })
-      : (this.copy = this.copy.filter(
-          (r) => !this.filterData(r, and).includes(false)
-        ));
-  }
-
-  _or() {
-    if (!this.copy.length) return;
-
-    const and = this.getQueryProp("_or");
-
-    console.log("copy in or", this.copy);
-
-    const found = [];
-
-    Array.isArray(and)
-      ? or.forEach((condition) => {
-          const match = this.copy.filter((r) =>
-            this.filterData(r, condition).includes(true)
-          );
-
-          found.indexOf(...match) === -1 && found.push(...match);
-        })
-      : (found = this.copy.filter((r) =>
-          this.filterData(r, and).includes(true)
-        ));
-
-    this.copy = found;
-  }
-
-  _or() {
-    if (!this.copy.length) return;
-
-    this.copy = this.copy.filter((rec) =>
-      this.filterData(rec, this.getQueryProp("_or")).includes(true)
-    );
-  }
-
-  _date() {
-    console.log(this.getQueryProp("_date"));
-  }
-
-  async _parseSearchable() {
+  parseFind() {
     try {
-      this.copy = JSON.parse(JSON.stringify(this.data));
-
-      for (const fn of this.precedenceParsersQueue) {
-        this[fn]();
-      }
+      this.runInitialParsing();
 
       if (this.filtersObject) {
         this.copy = this.copy.filter(
@@ -371,49 +367,102 @@ module.exports = class LocalParser extends Parser {
     }
   }
 
-  async _parseUpdateMany() {
+  parseFindOne() {
+    let found = false;
+
     try {
-      return this.data.map((record) => {
-        if (!this.filterData(record, this.getFiltersObject()).includes(false)) {
-          return this.mergeObjects([record, this.getQueryProp("_set")]);
-        } else {
-          return record;
+      this.runInitialParsing();
+      for (const record of this.copy) {
+        if (!this.filterData(record, this.filtersObject).includes(false)) {
+          found = true;
+          this.copy = [record];
+          break;
         }
-      });
+      }
+
+      if (!found) {
+        this.copy = null;
+      }
+
+      for (const fn of this.afterParsersQueue) {
+        this[fn]();
+      }
+
+      return this.copy[0];
     } catch (e) {
       return this.getError(e);
     }
   }
 
-  async _parseUpdateOne() {
+  mergeCopyAndOriginal() {
     try {
-      let counter = 0;
-      return this.data.map((record) => {
-        if (counter === 1) {
-          return record;
-        } else {
+      const modifiedIndices = this.copy.reduce(
+        (acc, rec) => [...acc, rec["_id"]],
+        []
+      );
+
+      return this.data.reduce((acc, curr) => {
+        !modifiedIndices.includes(curr["_id"])
+          ? acc.push(curr)
+          : acc.push(this.copy.find((el) => el["_id"] === curr["_id"]));
+
+        return acc;
+      }, []);
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  parseUpdateMany() {
+    try {
+      this.runInitialParsing();
+
+      this.copy = this.copy
+        .map((record) => {
           if (
             !this.filterData(record, this.getFiltersObject()).includes(false)
           ) {
-            const merged = this.mergeObjects([
-              record,
-              this.getQueryProp("_set")
-            ]);
-
-            counter++;
-            return merged;
+            return this.mergeObjects([record, this.getQueryProp("_set")]);
           }
-        }
-      });
+        })
+        .filter((record) => !!record);
+
+      for (const fn of this.afterParsersQueue) {
+        this[fn]();
+      }
+
+      return this.mergeCopyAndOriginal();
     } catch (e) {
       return this.getError(e);
     }
   }
 
-  async _parseInsertable() {
+  parseUpdateOne() {
+    try {
+      this.runInitialParsing();
+
+      for (const record of this.copy) {
+        if (!this.filterData(record, this.getFiltersObject()).includes(false)) {
+          this.copy = [this.mergeObjects([record, this.getQueryProp("_set")])];
+
+          break;
+        }
+      }
+
+      for (const fn of this.afterParsersQueue) {
+        this[fn]();
+      }
+
+      return this.mergeCopyAndOriginal();
+    } catch (e) {
+      return this.getError(e);
+    }
+  }
+
+  parseInsertable() {
     try {
       // if we have a single object instead of an array of objects to save, we push that one object to a new array
-
+      const f = this.filtersObject;
       const arrToSave =
         "_save" in f && Array.isArray(f["_save"]) ? f["_save"] : [f];
 
@@ -432,32 +481,32 @@ module.exports = class LocalParser extends Parser {
     }
   }
 
-  async _parseDeleteOne() {
+  parseDeleteOne() {
     try {
-      let counter = 0;
-      return this.data.filter((record) => {
-        if (counter === 1) {
-          return record;
-        } else {
-          if (
-            !this.filterData(record, this.getFiltersObject()).includes(false)
-          ) {
-            counter++;
-          }
+      this.runInitialParsing();
+
+      for (const record of this.copy) {
+        if (!this.filterData(record, this.getFiltersObject()).includes(false)) {
+          this.copy.splice(this.copy.indexOf(record), 1);
+
+          break;
         }
-      });
+      }
+
+      return this.copy;
     } catch (e) {
       return this.getError(e);
     }
   }
 
-  async _parseDeleteMany() {
+  parseDeleteMany() {
     try {
-      return this.data.filter((record) => {
-        if (this.filterData(record, this.getFiltersObject()).includes(false)) {
-          return record;
-        }
-      });
+      this.runInitialParsing();
+      const filtered = this.copy.filter((record) =>
+        this.filterData(record, this.getFiltersObject()).includes(false)
+      );
+
+      return filtered;
     } catch (e) {
       return this.getError(e);
     }
