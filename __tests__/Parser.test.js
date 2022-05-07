@@ -13,7 +13,7 @@ const parser = new Parser(null, {
 parser.run();
 
 describe("Testing Parser methods", function () {
-  it(`Method unstringify should turn a string parameter, based on it's value, into an equivalent of other type or return the string`, function () {
+  it(`Method parseValue should turn a string parameter, based on it's value, into an equivalent of other type or return the string`, function () {
     [
       ["false", false],
       ["true", true],
@@ -23,7 +23,7 @@ describe("Testing Parser methods", function () {
       ["0.2", 0.2],
       ["1.456", 1.456]
     ].map(([expected, result]) =>
-      assert.equal(parser.unstringify(expected), result)
+      assert.equal(parser.parseValue(expected), result)
     );
   });
 

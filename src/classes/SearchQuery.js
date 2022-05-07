@@ -9,15 +9,14 @@ module.exports = class SearchQuery {
 
   async run(q, toString = false) {
     try {
-      const connection = await cachedConnection(this.mode, {
-        localPath: this.config
-      });
-      console.time("qTime");
+      const connection = await cachedConnection(this.mode, this.config);
+      console.time("query time");
       const res = await connection.run(q);
+      console.log("this", connection);
 
-      console.log("Query result", toString ? JSON.stringify(res) : res);
-      console.log("PARSER IN SearchQuery", connection.parser);
-      console.timeEnd("qTime");
+      console.log("query result: ", toString ? JSON.stringify(res) : res);
+
+      console.timeEnd("query time");
     } catch (e) {
       return new ErrorHandler(e);
     }

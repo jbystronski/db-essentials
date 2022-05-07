@@ -9,13 +9,15 @@
         "node": ">=10"
     },
     "scripts": {
-        "test" : "mocha __tests__/index.test.js",
-        "seed" : "./bin/seed.js ./@dev/seeders ./@dev/test_files local ${table} ${count}"
+        "test": "mocha __tests__/index.test.js",
+        "seed": "./bin/seed.js ./@dev/seeders ./@dev/test_files local ${table} ${count}",
+        "query": "./bin/query.js db=./@dev/test_files mode=local ${q} ${asString}",
+        "q": "./bin/query.js db=./@dev/test_files mode=local ${q} ${asString}"
     },
     "bin": {
-        "seed" : "./bin/seed.js"
+        "seed": "./bin/seed.js",
+        "db-essentials-query": "./bin/query.js"
     },
-
     "keywords": [
         "adapter",
         "database",
@@ -26,7 +28,9 @@
         "nosql",
         "test"
     ],
-    "dependencies": {},
+    "dependencies": {
+        "db-essentials-mongo": "file:../@db-essentials-mongo"
+    },
     "devDependencies": {
         "mocha": "^9.2.2"
     }

@@ -5,7 +5,7 @@ module.exports = function (mode) {
     case "local":
       return require("./classes/TestDatabaseWithPersistence");
     case "mongo":
-      const { MongoDb } = require("mongodb-adapter");
+      const { MongoDb } = require("db-essentials-mongo");
       return MongoDb;
     default:
       return require("./classes/TestDatabase");

@@ -8,7 +8,7 @@
     - [Delete](#delete)
 - [Server side](#server-side)
 - [Request filters](#request-filters)
-- [Response modifiers](#response-modifiers)
+- [Read and update modifiers](#read-and-update-modifiers)
 - [Querying](#querying)
   - [General](#general)
   - [Run from terminal](#run-from-terminal)
@@ -22,15 +22,21 @@
 
 ## Description
 
-In essence this package is a local database manager. Each database collection is stored as a JSON file. This serves an alternative if you don't want or for some reason can't hook up to an external database source. You can set your database to "local" or "no_persist" mode. The latter is a default setting, it ignores any modifications made to database records (like deleting, saving or updating records), however it still simulates them, so it's best for a real experience website previews in production. The "local" mode allows for complete data manipulation and it's best suited for development stage.
+
+Out of the box, no dependencies
+
+This is a database package built mainly upon mongodb syntax. It serves as a local database environment, as all database files are stored locally. 
+
+In essence this package is a local database manager in the vein of NOSQL type databases. Each database collection is stored as a JSON file. This serves an alternative if you don't want or for some reason can't hook up to an external database source. You can set your database to "local" or "no_persist" mode. The latter is a default setting, it ignores any modifications made to database records (like deleting, saving or updating records), however it still simulates them, so it's best for a real experience website previews in production. The "local" mode allows for complete data manipulation and it's best suited for development stage.
 
 The package itself is bare bones, it comes with no dependecy chain and regardless of that it still covers all basic to moderate database necessities.
 The 'no_persist' mode is best for website previews, when you want the user to perform certain actions that simulate real effect on records.
 Beacause it relies on internal sources only, data objects are build on the fly and it works quite fast, though shortcomings of this approach are obvious.
 
-As of recently, there is the db-essentials-mongo module available. It comes with the same unified api and allows to easily switch back and forth without no changes to the code. More implementations are considered. 
+Query actions amd modifiers are closely modelled after mongodb, and implement majority of mongodb features when it comes to CRUD operations. Functionality is going to be extended over time. Refer to the manual to see what you can use. 
 
-  
+Mongodb extension for this package will be released any soon and more extensions are considered.   
+ 
 
 
 ## Installation
@@ -222,40 +228,46 @@ Current list of available database actions
 
 These are treated as reserved keywords and you should avoid using them as database table field names.<br>Filters can access deep nested fields, as example: field.nested.nested._exists=true 
 
-| Param           | Usage                      | Description                                                                                              |
-| --------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- |
-| _id             | _id=                       | Equal to resource _id field. You can chain filters: _id._in=1,2,3                                        |
-| _gt             | field._gt=                 | Greater than target                                                                                      |
-| _gte            | field._gte=                | Equal or greater than target                                                                             |
-| _lt             | field._lt=                 | Lower than target                                                                                        |
-| _lte            | field._lte=                | Equal or lower than target                                                                               |
-| _contains       | field._contains=           | Includes a target substring                                                                              |
-| _in             | field._in=                 | Equal to target or one of comma separated target values                                                  |
-| _not_in         | field._not_in=             | Different than target or comma separated target values                                                   |
-| _equals         | field._equals=             | Equal to target                                                                                          |
-| _not_equal      | field._not_equal=          | Different than target                                                                                    |
-| _exists         | field._exists=             | Checks if the value exists, "pass" true or "false"                                                       |
-| _type           | field._type=               | Checks if the value is of given type: string, null, date,  ...etc.<br>You can also pass an array of types to evaluate, field._type=null,date                                      |
-| _regex          | field._regex=              | Evaluates value based on a regex expression                                                              |
-| _all            | field._all=v1,v2,v3,...    | Checks if an array field contains all requested values                                                   |
-| _array_size     | field._array_size=[num]    | Checks if the array field is of specified size                                                           | 
+| Param           | Usage                            | Description                                                                                              |
+| --------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| _id             | _id=                             | Equal to resource _id field. You can chain filters: _id._in=1,2,3                                        |
+| _gt             | field._gt=                       | Greater than target                                                                                      |
+| _gte            | field._gte=                      | Equal or greater than target                                                                             |
+| _lt             | field._lt=                       | Lower than target                                                                                        |
+| _lte            | field._lte=                      | Equal or lower than target                                                                               |
+| _in             | field._in=                       | Equal to target or one of comma separated target values                                                  |
+| _not_in         | field._not_in=                   | Different than target or comma separated target values                                                   |
+| _equals         | field._equals=                   | Equal to target                                                                                          |
+| _not_equal      | field._not_equal=                | Different than target                                                                                    |
+| _exists         | field._exists=                   | Checks if the value exists, "pass" true or "false"                                                       |
+| _type           | field._type=                     | Checks if the value is of given type: string, null, date,  ...etc.<br>You can also pass an array of types to evaluate, field._type=null,date                                      |
+| _regex          | field._regex=                    | Evaluates value based on a regex expression                                                              |
+| _array_match    | field._array_match=              | Checks if an array field contains the requested value                                                    |
+| _array_all      | field._array_all=v1,v2,v3,...    | Checks if an array field contains all requested values                                                   |
+| _array_size     | field._array_size=[num]          | Checks if the array field is of specified size                                                           | 
+| _and            | _and.field=                      | Filters out records that don't match all conditions : _and.name=someName&_and.value._gt=4                                                                                            | 
+| _or             | _or.field=                       | Returns records that match at least one condition : _or.fieldName=value&_or.orOtherField._gt=4                                                           |
+| _nor            | _nor.field=                      | Filters out records that match the conditions: _nor.name=book&_nor.price._gt=19.99                                                                                               |
+ 
 
-
-## Response modifiers
+## Read and update modifiers
 
 These are treated as reserved keywords and you should avoid using them as database table field names. 
 
-| Param     | Usage                  | Description                                                                                                                                                     |
-| --------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| _only     | _only=                 | Specifies which fields should be included with the response. Accepts comma separated fields or a single field. Usage with 'except' in one query is prohibited.  |
-| _except   | _except=               | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Usage with 'only' in one query is prohibited.        |
-| _skip     | _skip=                 | How many records to skip. Accepts an integer value.                                                                                                             |
-| _limit    | _limit=                | Caps results number to a specified integer value.                                                                                                               |
-| _sort     | _sort.fieldName=       | Sorts data by a specified field, multiple sort params are allowed, should be either 1 (ascending order) or -1 (descending oreder)                               |                     
-| _set      | _set=                  | Sets a value to the target value                                                                                                                                |
-| _and      | _and.field=            | All fields must match the query: _and.name=someName&_and.value._gt=4                                                                                            | 
-| _or       | _or.field=             | Specifies alternative filters and returns the first match: _or.fieldName=value&_or.orOtherField._gt=4                                                           |
-| _nor      | _nor.field=            | No field can match the query: _nor.name=book&_nor.price._gt=19.99                                                                                               |
+| Param         | Usage                     | Description                                                                                                                                                     |
+| ------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| _only         | _only=                    | Specifies which fields should be included with the response. Accepts comma separated fields or a single field. Usage with 'except' in one query is prohibited.  |
+| _except       | _except=                  | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Usage with 'only' in one query is prohibited.        |
+| _skip         | _skip=                    | How many records to skip. Accepts an integer value.                                                                                                             |
+| _limit        | _limit=                   | Caps results number to a specified integer value.                                                                                                               |
+| _sort         | _sort.field=              | Sorts data by a specified field, should be either 1 (ascending order) or -1 (descending order).                                                                 |     
+| _slice        | _slice=[start],[end]      | Gets a range of records.                                                                                                                                        |               
+| _set          | _set.field=               | Sets a value to the target value.                                                                                                                               |
+| _inc          | _inc.field=               | Increments a number value by specified positive or negative value.                                                                                              |
+| _cdate        | _cdate.field.type=        | Updates a field to a current date or timestamp, _cdate.updated_at.type=date or _cdate.updated_at.type=timestamp.                                                | 
+| _array_slice  | _array_slice.field=[num]  | Specifies how many values to return from an array field.                                                                                                        |
+
+
 
 ```js
 
@@ -473,7 +485,10 @@ Use anything that suits you.
 
     // function that returns a seeder object
 
-    module.exports = () => {
+    module.exports = async () => {
+
+    // as you might await smth here
+
     return {
         name: `${getRandomArrayElement(brands)} ${getRandomArrayElement(
         adjectives

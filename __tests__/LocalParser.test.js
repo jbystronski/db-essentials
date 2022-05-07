@@ -22,9 +22,9 @@ describe("Testing LocalParser methods", () => {
     assert.equal(p.filterFunctions("_equals", "milk", "milk"), true);
   });
 
-  it("Method recursiveKeys should return an array of dot separated strings representing object's nesting structure", () => {
+  it("Method getAllObjectKeys should return an array of dot separated strings representing object's nested keys", () => {
     assert.deepEqual(
-      p.recursiveKeys({
+      p.getAllObjectKeys({
         name: "mouse",
         value: 762,
         color: "white",
