@@ -33,10 +33,11 @@ module.exports = class Parser {
     ];
   }
 
-  getError(e) {
-    return new ErrorHandler(e);
+  getError(e, msg = null) {
+    this.error = new ErrorHandler(e, {
+      msg: msg
+    });
   }
-
   isOperator(k) {
     return k.startsWith("_") && k !== "_id";
   }
@@ -45,7 +46,7 @@ module.exports = class Parser {
     try {
       return v !== null && v.constructor.name === "Object";
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -75,7 +76,7 @@ module.exports = class Parser {
 
       return checkType(v, type);
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -114,7 +115,7 @@ module.exports = class Parser {
 
       return forceToArray ? values : values[0];
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -131,7 +132,7 @@ module.exports = class Parser {
           )
         : object;
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   };
 
@@ -185,7 +186,7 @@ module.exports = class Parser {
       }
       return container;
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -223,7 +224,7 @@ module.exports = class Parser {
         }
       }
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -255,7 +256,7 @@ module.exports = class Parser {
 
       return target;
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -271,7 +272,7 @@ module.exports = class Parser {
 
       return queryParts;
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 

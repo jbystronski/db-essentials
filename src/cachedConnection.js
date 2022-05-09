@@ -1,26 +1,24 @@
-const getDatabaseClient = require("./getDatabaseClient");
-const ErrorHandler = require("./errors/ErrorHandler");
+const Connection = require("./classes/Connection");
+const resolveConnection = require("./resolveConnection");
 
 let connection = null;
 
 module.exports = async function cachedConnection(
-  mode = "no_persist",
-  config = null
+  config = { database: null },
+  mode = "no_persist"
 ) {
   try {
-    if (connection) {
-      return connection;
+    if (
+      !connection ||
+      connection.mode !== mode ||
+      connection.db !== config.database
+    ) {
+      const Instance = resolveConnection(mode);
+      connection = await new Instance(config, mode).establishConnection();
     }
-
-    const DbClient = getDatabaseClient(mode);
-
-    const instance = new DbClient(config);
-
-    connection = await instance.establishConnection();
-    connection.isCached = true;
 
     return connection;
   } catch (e) {
-    return new ErrorHandler(e);
+    throw new Error(e);
   }
 };

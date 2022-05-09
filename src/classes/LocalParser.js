@@ -46,7 +46,7 @@ module.exports = class LocalParser extends Parser {
 
       return matches;
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -67,6 +67,7 @@ module.exports = class LocalParser extends Parser {
           const split = compare.split("/").filter((el) => el !== "");
 
           const pattern = new RegExp(split[0], split[1]);
+          console.log("P", pattern);
 
           return value.match(pattern);
         },
@@ -98,7 +99,7 @@ module.exports = class LocalParser extends Parser {
 
       return fns[fName]();
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -118,7 +119,7 @@ module.exports = class LocalParser extends Parser {
 
       return container;
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -129,7 +130,7 @@ module.exports = class LocalParser extends Parser {
         this[fn]();
       }
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -158,7 +159,7 @@ module.exports = class LocalParser extends Parser {
     try {
       this.copy = this.copy.slice(this.getQueryProp("_skip"));
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -182,15 +183,14 @@ module.exports = class LocalParser extends Parser {
       const [props, slice] = this.stringifyPath(
         this.getQueryProp("_array_slice")
       );
-      console.log("Array slice", props);
-      console.log("Array slice", slice);
+
       this.copy = this.copy.map((rec) =>
         this.modifyObjectProperty(props, rec, (v) =>
           Array.isArray(v) ? v.slice(0, slice) : v
         )
       );
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -207,6 +207,8 @@ module.exports = class LocalParser extends Parser {
   }
 
   _cdate() {
+    // TODO: check
+
     try {
       const [dottedProps, type] = this.stringifyPath(
         this.getQueryProp("_cdate")
@@ -219,7 +221,7 @@ module.exports = class LocalParser extends Parser {
         this.modifyObjectProperty(path, rec, date)
       );
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -228,7 +230,7 @@ module.exports = class LocalParser extends Parser {
     try {
       this.copy = this.copy.slice(0, this.getQueryProp("_limit"));
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -238,7 +240,7 @@ module.exports = class LocalParser extends Parser {
     try {
       this.copy = this.copy.slice(s[0], s[0] + s[1]);
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -264,7 +266,7 @@ module.exports = class LocalParser extends Parser {
       delete keys.reduce((o, k) => o[k] !== undefined && o[k], object)[last];
       return object;
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -277,10 +279,12 @@ module.exports = class LocalParser extends Parser {
       const except = this.getQueryProp("_except");
 
       for (const [k, v] of this.copy.entries()) {
-        this.copy[k] = except.map((prop) => this.deleteKey(v, prop.split(".")));
+        this.copy[k] = except.map((prop) =>
+          this.deleteKey(v, prop.split("."))
+        )[0];
       }
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -301,7 +305,7 @@ module.exports = class LocalParser extends Parser {
           .reduce((acc, curr) => this.mergeObjects([acc, curr]), {});
       }
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -363,7 +367,7 @@ module.exports = class LocalParser extends Parser {
       }
       return this.copy;
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -390,7 +394,7 @@ module.exports = class LocalParser extends Parser {
 
       return this.copy[0];
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -409,7 +413,7 @@ module.exports = class LocalParser extends Parser {
         return acc;
       }, []);
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -417,11 +421,14 @@ module.exports = class LocalParser extends Parser {
     try {
       this.runInitialParsing();
 
+      let updatedCount = 0;
+
       this.copy = this.copy
         .map((record) => {
           if (
             !this.filterData(record, this.getFiltersObject()).includes(false)
           ) {
+            updatedCount++;
             return this.mergeObjects([record, this.getQueryProp("_set")]);
           }
         })
@@ -431,9 +438,9 @@ module.exports = class LocalParser extends Parser {
         this[fn]();
       }
 
-      return this.mergeCopyAndOriginal();
+      return [updatedCount, this.mergeCopyAndOriginal()];
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -453,9 +460,11 @@ module.exports = class LocalParser extends Parser {
         this[fn]();
       }
 
-      return this.mergeCopyAndOriginal();
+      const updatedRecord = this.copy;
+
+      return [updatedRecord, this.mergeCopyAndOriginal()];
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
@@ -475,40 +484,48 @@ module.exports = class LocalParser extends Parser {
         lastId++;
       });
 
-      return [...this.data, ...arrToSave];
+      const merged = [...this.data, ...arrToSave];
+      return [arrToSave, merged];
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
   parseDeleteOne() {
     try {
       this.runInitialParsing();
+      let toDelete = null;
 
       for (const record of this.copy) {
         if (!this.filterData(record, this.getFiltersObject()).includes(false)) {
-          this.copy.splice(this.copy.indexOf(record), 1);
+          const index = this.copy.indexOf(record);
+          toDelete = this.copy[index];
+          this.copy.splice(index, 1);
 
           break;
         }
       }
 
-      return this.copy;
+      return [toDelete, this.copy];
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 
   parseDeleteMany() {
     try {
       this.runInitialParsing();
+
+      let l = this.copy.length;
       const filtered = this.copy.filter((record) =>
         this.filterData(record, this.getFiltersObject()).includes(false)
       );
 
-      return filtered;
+      const deleteCount = l - filtered.length;
+
+      return [deleteCount, filtered];
     } catch (e) {
-      return this.getError(e);
+      this.getError(e);
     }
   }
 };
