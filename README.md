@@ -1,20 +1,20 @@
 - [Description](#description)
 - [Installation](#installation)
-- [Query building](#query-building)
-- [Available methods](#available-methods)
-  - [Examples](#examples)
-    - [Save](#save)
+- [HTTP methods](#http-methods)
+    - [Insert](#insert)
     - [Update](#update)
     - [Delete](#delete)
-- [Server side](#server-side)
-- [Request filters](#request-filters)
-- [Read and update modifiers](#read-and-update-modifiers)
-- [Querying](#querying)
+- [Client](#client)
+- [Server](#server)
+- [Query builidng](#query-builidng)
   - [General](#general)
+  - [Request filters](#request-filters)
+  - [Read and update modifiers](#read-and-update-modifiers)
   - [Run from terminal](#run-from-terminal)
     - [Usage](#usage)
     - [Example](#example)
 - [Seeders](#seeders)
+  - [Setup](#setup)
   - [Usage](#usage-1)
   - [Example](#example-1)
 
@@ -22,21 +22,15 @@
 
 ## Description
 
+Lightweight and fast local json database manager
 
-Out of the box, no dependencies
-
-This is a database package built mainly upon mongodb syntax. It serves as a local database environment, as all database files are stored locally. 
-
-In essence this package is a local database manager in the vein of NOSQL type databases. Each database collection is stored as a JSON file. This serves an alternative if you don't want or for some reason can't hook up to an external database source. You can set your database to "local" or "no_persist" mode. The latter is a default setting, it ignores any modifications made to database records (like deleting, saving or updating records), however it still simulates them, so it's best for a real experience website previews in production. The "local" mode allows for complete data manipulation and it's best suited for development stage.
-
-The package itself is bare bones, it comes with no dependecy chain and regardless of that it still covers all basic to moderate database necessities.
-The 'no_persist' mode is best for website previews, when you want the user to perform certain actions that simulate real effect on records.
-Beacause it relies on internal sources only, data objects are build on the fly and it works quite fast, though shortcomings of this approach are obvious.
-
-Query actions amd modifiers are closely modelled after mongodb, and implement majority of mongodb features when it comes to CRUD operations. Functionality is going to be extended over time. Refer to the manual to see what you can use. 
-
-Mongodb extension for this package will be released any soon and more extensions are considered.   
- 
+- supports all CRUD operations
+- comprehensive querying syntax
+- built-in seeder to quickly populate your database up to thousands of records
+- a command line tool to run dabase queries from terminal
+- 'persist' or 'no_persist' mode if you want to block write operations
+- base package comes with no dependencies
+- easily extensible, dedicated database modules are under way 
 
 
 ## Installation
@@ -50,25 +44,10 @@ Mongodb extension for this package will be released any soon and more extensions
     yarn add db-essentials
 
 ````
-
-## Query building
-
+## HTTP methods
 
 
-Typical GET api call should resemble:
-
-http://somedomain/find/users
-
-Where "find" is the requested database method and "users" is the target resource. The order is important.
-
-
-
-
-## Available methods
-
-Current list of available database actions
-
-| Action         | Http Verb     | Description
+| Method         | Verb          | Description
 | -------------- | ------------- | -------------------------------------------------------------------------------- |
 | find           | GET           | Returns any number of records (all by default), based on provided filters
 | find_one       | GET           | Returns a single record based on provided filters
@@ -80,18 +59,14 @@ Current list of available database actions
 | update_one     | PUT           | Updates the first record that matches the filters 
 | update_many    | PUT           | Updates all records that match the filters
 
-"save" and "update" calls should be sent with a http request body attached
 
 
-### Examples
-
-
-#### Save
+#### Insert
 
 ```js
 
     const multipleInsert = 
-            [
+            _save: [
                 {
                     name: 'Super Slim Mouse',
                     color: 'Red',
@@ -137,7 +112,7 @@ Current list of available database actions
 
     // update records
 
-    const dataToUpdate = {
+    const data = {
         _id: {
             _gt: 10
         },
@@ -148,7 +123,7 @@ Current list of available database actions
 
     const response = await fetch(`/some_endpoint/users/post`,{
         method: 'PUT',
-        body: JSON.stringify(dataToUpdate)
+        body: JSON.stringify(data)
 
     })
 
@@ -167,64 +142,236 @@ Current list of available database actions
 
 ```
 
-## Server side
+## Client
+
+Example with fetch API
 
 ```js
-    
-    // with nextjs 
-    
-    const {cachedConnection} = require('@db-essentials')
 
-    async function handler(req,res) {
+// with query parameters
 
-        const {url, body} = req
+await fetch('somedomain/find/items?_only=price,name,updated_at&_limit=10')
 
-        try {
+// with body
 
-            const db = await cachedConnection('local', {localPath: 'PATH/TO/LOCAL_DB_FILES})
+await fetch('somdedomain/update_one/items', {
+    method: 'PUT',
+    body: JSON.stringify({
+
+        _id: 12,
+        _set: {
+            price: 169.99
             
-            const result = await db.run(url, body)
-
-            res.status(200).json(result);
-
-        } catch(e) {
-            console.error(e)
         }
 
-    }
+    })
+})
 
 ```
 
+## Server
+
+
+To setup your database you must create a connection instance first. It accepts two arguments:
+
+- first one is a configuration object with one mandatory property 'database' which is the path to your database files directory
+- pass 'no_persist' or 'persist' as the second argument. It creates a writable or non-writable database instance, 'persist' is a default setting.
+
+Recommended way is to cache a connection for further usage.
+
 ```js
-    
-    // with express 
-    
-    const express = require("express");
-    const app = express();
-    const {cachedConnection} = require('@db-essentials')
 
-    async function handler(req,res) {
+const {cachedConnection} = require('db-essentials')
 
-        const {url, body} = req
+const mode = 'persist'
 
-        try {
+const conn = await cachedConnection({database: 'somepath}, mode)
 
-            const db = await cachedConnection('local', {localPath: "/PATH/TO/DB_FILES"})
-            
-            const result = await db.run(url, body)
+```
 
-            res.status(200).json(result);
+Alternatively, establish a new connection.
 
-        } catch(e) {
-            console.error(e)
-        }
+```js
 
-    }
+const {resolveConnection} = require('db-essentials)
+
+const mode = 'persist'
+
+const Instance = resolveConnection(mode); // pass a mode argument, 'persist' or 'no_persist', if none, it will run in 'persist' mode
+
+connection = await new Instance({database: 'somepath'}, mode).establishConnection();
+
+```
+
+Each query is represented by an isolated Query instance. It's constructor requires an instance of Connection.
+                                                                           |
+```js
+
+    const {Query} = require('db-essentials')
+
+    const q = new Query(conn)
+
+```
+
+Depending on your backend environment, you have to access the request url along with the body, if available.
+
+Full example
+
+```js
+
+const {Query, cachedConnection} = require('db-essentials')
+
+const q = new Query(await cachedConnection({database: 'path'}, 'persist'))
+
+// then
+
+const result = await q.run(url, body)
+
+
+// shorthand
+
+
+
+const result = await new Query(await cachedConnection({database: 'path'}, 'persist' )).run(url, body)
 
 ```
 
 
-## Request filters
+## Query builidng
+
+### General
+
+All query operators start with underscore to distinguish them from regular field names: 
+
+```js
+
+// _exists, _type, _lte, etc...
+
+```
+
+Nested properties can be accessed using dot notation: 
+
+```js
+
+const q = "?field1.nested.value._gte=10"
+
+```
+
+Array values should be comma separated. Example of selecting fields to return:
+
+```js
+
+const q = "?_only=field1,field2,field3,nested.field1,nested.nested.field3" // etc... 
+
+```
+
+Some operators precede the fieldName and some come after: 
+
+```js
+
+ 
+
+const q = "?_nor.field=value"
+
+// vs
+
+const q = "?field.someNestedField._in=1,2,3,4"
+
+/*
+
+```
+
+Search params use a regular '?' and '&' syntax. Some operators allow multiple conditions:
+
+```js
+
+const q = "somedomain/find/items?_nor.itemName._in=name1,name2,name3&_nor.someValue._gte=100&optonalField._exists=true"
+
+```
+
+Above example using request body object
+
+```js
+
+const body = JSON.stringify({
+
+    _nor: {
+        itemName: {
+            _in: ['name1', 'name2', 'name3']
+        },
+        someValue: {
+            _gte: 100
+        }
+    },
+    optionalField: {
+        _exists: true
+    }
+
+})
+
+// vs. something more complicated
+
+const url = 'somedomain/update_many/items'
+
+/* 
+    All items where: 
+    - color contains substring 'bl' 
+    - pricing.subtotal is lower 250.99
+    - some deeply nested array value size is 4
+    should update the following fields:
+    - color to 'gold',
+    - pricing.subtotal to 399.99
+    additionaly:
+    - sold field should increment by 1
+    - dates.updated_at field should receive a current timestamp
+
+*/
+
+const body = JSON.stringify({
+
+    _and: {
+        color: {
+            _regex: '/^bl/i'
+        },
+        pricing: {
+            subtotal: {
+                _lt: 250.99
+            }
+        },
+        nestedFields: {
+            deeperFields: {
+               someArray: {
+                   _array_size: 4
+               }
+            }
+        }
+    },
+    _set: {
+        color: 'gold'
+        pricing: {
+            subtotal: 399.99
+        }
+            
+        
+    },
+    _cdate: {
+        dates: {
+            updated_at: {
+                _type: 'timestamp'
+            }
+        }
+    },
+    _inc: {
+        sold: 1
+    }
+
+
+})
+
+
+```
+
+### Request filters
 
 These are treated as reserved keywords and you should avoid using them as database table field names.<br>Filters can access deep nested fields, as example: field.nested.nested._exists=true 
 
@@ -237,9 +384,9 @@ These are treated as reserved keywords and you should avoid using them as databa
 | _lte            | field._lte=                      | Equal or lower than target                                                                               |
 | _in             | field._in=                       | Equal to target or one of comma separated target values                                                  |
 | _not_in         | field._not_in=                   | Different than target or comma separated target values                                                   |
-| _equals         | field._equals=                   | Equal to target                                                                                          |
+| _equals         | field._equals=                   | Equal to target                                                                                         |
 | _not_equal      | field._not_equal=                | Different than target                                                                                    |
-| _exists         | field._exists=                   | Checks if the value exists, "pass" true or "false"                                                       |
+| _exists         | field._exists=                   | Checks if the value exists, pass true or false                                                       |
 | _type           | field._type=                     | Checks if the value is of given type: string, null, date,  ...etc.<br>You can also pass an array of types to evaluate, field._type=null,date                                      |
 | _regex          | field._regex=                    | Evaluates value based on a regex expression                                                              |
 | _array_match    | field._array_match=              | Checks if an array field contains the requested value                                                    |
@@ -250,7 +397,7 @@ These are treated as reserved keywords and you should avoid using them as databa
 | _nor            | _nor.field=                      | Filters out records that match the conditions: _nor.name=book&_nor.price._gt=19.99                                                                                               |
  
 
-## Read and update modifiers
+### Read and update modifiers
 
 These are treated as reserved keywords and you should avoid using them as database table field names. 
 
@@ -264,49 +411,9 @@ These are treated as reserved keywords and you should avoid using them as databa
 | _slice        | _slice=[start],[end]      | Gets a range of records.                                                                                                                                        |               
 | _set          | _set.field=               | Sets a value to the target value.                                                                                                                               |
 | _inc          | _inc.field=               | Increments a number value by specified positive or negative value.                                                                                              |
-| _cdate        | _cdate.field.type=        | Updates a field to a current date or timestamp, _cdate.updated_at.type=date or _cdate.updated_at.type=timestamp.                                                | 
+| _cdate        | _cdate.field._type=        | Updates a field to a current date or timestamp, _cdate.updated_at._type=date or _cdate.updated_at._type=timestamp.                                                | 
 | _array_slice  | _array_slice.field=[num]  | Specifies how many values to return from an array field.                                                                                                        |
 
-
-
-```js
-
-    // example usage
-
-    let apiCall = ""
-
-    // delete resources with specified _id's
-
-    apiCall = "/some_endpoint/resources/delete?_id._in=52,13,33"
-
-    // get vehicles with _id value greater than 10 but without 20, maximum speed of 200, sort from lowest to highest speed and return only color and brand
-
-    apiCall = "/some_endpoint/find/vehicles?_id._gt=10&_id.not=20&speed._lte=200&_sort.speed=ASC&_only=color,brand"
-
-    // get a single resource filtered out by nested fields
-
-    apiCall = "/some_endpoint/find_one/products?price._lte=20&department.category.subcategory=dolls"
-
-```
-
-
-
-## Querying
-
-### General
-
-get all records
-
-https://somedomain/find/users
-
-filter out some records
-
-https://somedomain/find/users?age._gt=30
-
-
-paginatation example
-
-https://somedomain/find/users?_skip=10&_limit=10
 
 
 ### Run from terminal
@@ -330,13 +437,15 @@ Include this line in you package json scripts
 ```
 #### Example
 
+A query must be wrapped in quotes
+
 ```js
 
     npm run
 
     // or
 
-    yarn query find/users?_only=name,age&_limit=15 true
+    yarn query "find/users?_only=name,age&_limit=15" true
 
     // pass true at the end if you want to see the result as a string, otherwise you can leave it
 
@@ -348,18 +457,29 @@ Include this line in you package json scripts
 You can use a built-in command line script to seed your local database.
 
 
-### Usage
+### Setup
 
-Method 1
 
 Add a line to your package.json scripts as shown in the example below.
 
-The first argument is the path to a directory in your app where seeders are stored.
+- first argument is the path to a directory in your app where seeders are stored.
+- second argument is the path which points to your local database files directory.
+- the third argument tells whether it should persist the data, by default it does
 
-The second path points to your local database files directory.
 
-The third argument tells whether it should run in local mode (seed to a file).
+```json
 
+    {
+        "scripts" : {
+            // other scripts
+            "seed": "db-essentials-seed path/to/seeders path/to/database_files persist"
+        }
+    }
+
+
+
+```
+### Usage
 
 ```js
 
@@ -371,30 +491,15 @@ The third argument tells whether it should run in local mode (seed to a file).
       if you want to seed a fixed number of data at once, an array of objects, usually that's what you need 
     */
 
-    npm run seed_db users 77
+    npm run seed users 77
 
-    npm run seed_db categories // creates database records from an array of objects returned from the seeder
+    npm run seed categories // creates database records from an array of objects returned from the seeder
     
     or
 
-    yarn seed_db users 77
+    yarn seed users 77
     
 ```
-
-
-```json
-
-    {
-        "scripts" : {
-            // other scripts
-            "seed_db": "seed path/to/seeders path/to/database_files local"
-        }
-    }
-
-
-
-```
-
 
 ### Example
 
