@@ -9,11 +9,10 @@
   - [Response modifiers](#response-modifiers)
   - [Insert and update](#insert-and-update)
   - [Run from terminal](#run-from-terminal)
-    - [Example](#example)
 - [Seeders](#seeders)
   - [Setup](#setup)
   - [Usage](#usage)
-  - [Example](#example-1)
+  - [Example](#example)
 
 
 
@@ -120,7 +119,7 @@ connection = await new Instance({database: 'somepath'}, mode).establishConnectio
 
 ```
 
-Each query is represented by an isolated Query instance. It's constructor requires an instance of Connection.
+Each query is represented by an isolated Query instance. Pass a connection instannce to the constructor, see above.
                                                                            |
 ```js
 
@@ -158,7 +157,7 @@ const result = await new Query(await cachedConnection({database: 'path'}, 'persi
 
 ### General
 
-All query operators start with underscore to disctinc from regular field names: 
+Query operators start with underscore to avoid mismatching, in general you should avoid preceding your database field names with _. 
 
 ```js
 
@@ -321,25 +320,25 @@ These are treated as reserved keywords and you should avoid using them as databa
 
 | Param         | Usage                     | Description                                                                                                                                                     |
 | ------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| _only         | _only=[array]             | Specifies which fields should be included with the response. Accepts comma separated fields or a single field. Usage with 'except' in one query is prohibited.  |
-| _except       | _except=[array]           | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Usage with 'only' in one query is prohibited.        |
+| _only         | _only=[array]             | Specifies which fields should be included with the response. Accepts comma separated fields or a single field. Use either this or '_except'                     |
+| _except       | _except=[array]           | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Use either this or '_only'                           |
 | _skip         | _skip=[number]            | How many records to skip. Accepts an integer value.                                                                                                             |
 | _limit        | _limit=[number]           | Caps results number to a specified integer value.                                                                                                               |
 | _sort         | _sort.field=[number]      | Sorts data by a specified field, should be either 1 (ascending order) or -1 (descending order).                                                                 |     
-| _slice        | _slice=[array]            | Gets a range of records.                                                                                                                                        |                                                                                                                                          | 
+| _slice        | _slice=[array]            | Gets a range of records.                                                                                                                                        |                                                                                                                                          
 | _array_slice  | _array_slice.field=[num]  | Specifies how many values to return from an array field.                                                                                                        |
 
 
 ### Insert and update
 
-Operators to be used inside a body object of POST and PUT http requests
+Operators to be used inside a body object of POST or PUT http requests
 
 | Param         | Usage                         | Description                                                                                                                                                     |
-| ------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |                                                                                                                      |               
-| _set          | _set.field=[any]              | Updateds a value to the target value, should be used with http PUT call                                                                                                                          |
+| ------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |                                                                                                                                   
+| _set          | _set.field=[any]              | Updateds a value to the target value, should be used with http PUT call                                                                                         |
 | _inc          | _inc.field=[number]           | Increments a number value by specified positive or negative value.                                                                                              |
-| _cdate        | _cdate.field._type=[string]   | Updates a field to a current date or timestamp, _cdate.updated_at._type=date or _cdate.updated_at._type=timestamp.                                                | 
-| _save         | _save=[array]                 | Specifies an array of records to be inserted into database                                                                                                       |
+| _cdate        | _cdate.field._type=[string]   | Updates a field to a current date or timestamp, _cdate.updated_at._type=date or _cdate.updated_at._type=timestamp.                                              | 
+| _save         | _save=[array]                 | Specifies an array of records to be inserted into database                                                                                                      |
 
 
 
@@ -358,13 +357,12 @@ The path argument point to you local files
     {
         "scripts" : {
             // other scripts
-            "query" : "db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=local
+            "query" : "db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=persit
         }
     }
 
 
 ```
-#### Example
 
 A query must be wrapped in quotes
 
@@ -379,7 +377,6 @@ A query must be wrapped in quotes
     // pass true at the end if you want to see the result as a string, otherwise you can leave it
 
 ```
-
 
 ## Seeders
 

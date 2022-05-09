@@ -1,5 +1,5 @@
 {
-    "name": "db-essentials",
+    "name": "@db-essentials/base",
     "author": "Jakub Bystroński",
     "version": "1.0.0",
     "description": "Database abstraction layer for nodejs",
