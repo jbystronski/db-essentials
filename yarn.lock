@@ -121,12 +121,6 @@
   "resolved" "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz"
   "version" "0.0.1"
 
-"db-essentials-mongo@file:../@db-essentials-mongo":
-  "resolved" "file:../@db-essentials-mongo"
-  "version" "1.0.0"
-  dependencies:
-    "mongodb" "^4.3.0"
-
 "debug@4.3.3":
   "integrity" "sha512-/zxw5+vh1Tfv+4Qn7a5nsbcJKPaSvCDhojn6FEl9vupwK2VCSDtEiEtqr8DFtzYFOdz63LBkxec7DYuc2jon6Q=="
   "resolved" "https://registry.npmjs.org/debug/-/debug-4.3.3.tgz"

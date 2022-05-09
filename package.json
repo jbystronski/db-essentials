@@ -10,27 +10,20 @@
     },
     "scripts": {
         "test": "mocha __tests__/index.test.js",
-        "seed": "./bin/seed.js ./@dev/seeders ./@dev/test_files local ${table} ${count}",
-        "query": "./bin/query.js db=./@dev/test_files mode=local ${q} ${asString}",
-        "q": "./bin/query.js db=./@dev/test_files mode=local ${q} ${asString}"
+        "seed": "./bin/seed.js ./@dev/seeders ./@dev/test_files persist ${table} ${count}",
+        "query": "./bin/query.js db=./@dev/test_files mode=persist ${q} ${asString}",
+        "q": "./bin/query.js db=./@dev/test_files mode=persist ${q} ${asString}"
     },
     "bin": {
-        "seed": "./bin/seed.js",
+        "db-essentials-seed": "./bin/seed.js",
         "db-essentials-query": "./bin/query.js"
     },
     "keywords": [
-        "adapter",
+        
         "database",
-        "local",
-        "mock",
-        "node",
-        "nodejs",
         "nosql",
-        "test"
+        "query"
     ],
-    "dependencies": {
-        "db-essentials-mongo": "file:../@db-essentials-mongo"
-    },
     "devDependencies": {
         "mocha": "^9.2.2"
     }
