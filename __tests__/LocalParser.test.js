@@ -9,8 +9,7 @@ describe("Testing LocalParser methods", () => {
       p.filterFunctions("_not_in", ["toy", "food", "book"], "hand"),
       true
     );
-    assert.equal(p.filterFunctions("_contains", "sha", "shield"), false);
-    assert.equal(p.filterFunctions("_contains", "pi", "black"), false);
+
     assert.equal(p.filterFunctions("_not_equal", "book", "hand"), true);
     assert.equal(p.filterFunctions("_gt", 3, 14), true);
     assert.equal(p.filterFunctions("_lt", 3, 14), false);

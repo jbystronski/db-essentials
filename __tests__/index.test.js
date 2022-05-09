@@ -1,5 +1,5 @@
 describe("Package tests", () => {
   require("./Parser.test");
-  require("./TestDatabase.test");
+  require("./Query.test");
   require("./LocalParser.test");
 });
