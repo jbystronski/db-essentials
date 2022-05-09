@@ -2,9 +2,8 @@
 
 const [db, mode, q, toString = false] = process.argv.slice(2);
 
-const path = require("path");
-
-const SearchQuery = require("./../src/classes/SearchQuery");
+const Query = require("./../src/classes/Query");
+const cachedConnection = require("./../src/cachedConnection");
 
 (async function () {
   if (!q) {
@@ -13,12 +12,19 @@ const SearchQuery = require("./../src/classes/SearchQuery");
   }
 
   try {
-    const query = new SearchQuery(
-      mode.replace("mode=", ""),
-      db.replace("db=", "")
-    );
+    console.time("query time");
 
-    await query.run(q, toString);
+    const res = await new Query(
+      await cachedConnection(
+        {
+          database: db.replace("db=", "")
+        },
+        mode.replace("mode=", "")
+      )
+    ).run(q);
+
+    console.log("query result: ", toString ? JSON.stringify(res) : res);
+    console.timeEnd("query time");
   } catch (e) {
     throw new Error(e);
   }
