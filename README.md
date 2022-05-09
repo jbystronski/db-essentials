@@ -1,21 +1,18 @@
 - [Description](#description)
 - [Installation](#installation)
 - [HTTP methods](#http-methods)
-    - [Insert](#insert)
-    - [Update](#update)
-    - [Delete](#delete)
 - [Client](#client)
 - [Server](#server)
 - [Query builidng](#query-builidng)
   - [General](#general)
   - [Request filters](#request-filters)
-  - [Read and update modifiers](#read-and-update-modifiers)
+  - [Response modifiers](#response-modifiers)
+  - [Insert and update](#insert-and-update)
   - [Run from terminal](#run-from-terminal)
-    - [Usage](#usage)
     - [Example](#example)
 - [Seeders](#seeders)
   - [Setup](#setup)
-  - [Usage](#usage-1)
+  - [Usage](#usage)
   - [Example](#example-1)
 
 
@@ -61,86 +58,7 @@ Lightweight and fast local json database manager
 
 
 
-#### Insert
 
-```js
-
-    const multipleInsert = 
-            _save: [
-                {
-                    name: 'Super Slim Mouse',
-                    color: 'Red',
-                    material: 'plastic',
-                    price: 150
-                },
-                {
-                    name: 'Modern Headphones',
-                    color: 'white',
-                    material: 'aluminium',
-                    price: 350
-
-                },
-                {
-                    name: 'Ultra Wallet',
-                    color: 'black',
-                    material: 'leather',
-                    price: 249.99
-                }
-            ]
-
-
-    const singleInsert =  {
-                    name: 'Super Slim Mouse',
-                    color: 'Red',
-                    material: 'plastic',
-                    price: 150
-                }
-
-
-    const response = await fetch(`/some_endpoint/save_one/item`,{
-        method: 'POST',
-        body: JSON.stringify(single || multiple)
-
-    })
-
-```
-
-#### Update
-
-
-```js
-
-    // update records
-
-    const data = {
-        _id: {
-            _gt: 10
-        },
-        _set: {
-            price: 144
-        }
-    }
-
-    const response = await fetch(`/some_endpoint/users/post`,{
-        method: 'PUT',
-        body: JSON.stringify(data)
-
-    })
-
-```
-
-#### Delete
-
-```js
-
-    // Deletes records
-
-    let url 
-
-
-    const response = await fetch(`/some_endpoint/users/delete?_id.in=1,2,3`)
-
-```
 
 ## Client
 
@@ -170,7 +88,6 @@ await fetch('somdedomain/update_one/items', {
 ```
 
 ## Server
-
 
 To setup your database you must create a connection instance first. It accepts two arguments:
 
@@ -241,7 +158,7 @@ const result = await new Query(await cachedConnection({database: 'path'}, 'persi
 
 ### General
 
-All query operators start with underscore to distinguish them from regular field names: 
+All query operators start with underscore to disctinc from regular field names: 
 
 ```js
 
@@ -375,52 +292,64 @@ const body = JSON.stringify({
 
 These are treated as reserved keywords and you should avoid using them as database table field names.<br>Filters can access deep nested fields, as example: field.nested.nested._exists=true 
 
+Records are indexed by _id field, which holds a numeric value, it's auto generated, and you can treat it as a usual field, example: 
+
 | Param           | Usage                            | Description                                                                                              |
 | --------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| _id             | _id=                             | Equal to resource _id field. You can chain filters: _id._in=1,2,3                                        |
-| _gt             | field._gt=                       | Greater than target                                                                                      |
-| _gte            | field._gte=                      | Equal or greater than target                                                                             |
-| _lt             | field._lt=                       | Lower than target                                                                                        |
-| _lte            | field._lte=                      | Equal or lower than target                                                                               |
-| _in             | field._in=                       | Equal to target or one of comma separated target values                                                  |
-| _not_in         | field._not_in=                   | Different than target or comma separated target values                                                   |
-| _equals         | field._equals=                   | Equal to target                                                                                         |
-| _not_equal      | field._not_equal=                | Different than target                                                                                    |
-| _exists         | field._exists=                   | Checks if the value exists, pass true or false                                                       |
-| _type           | field._type=                     | Checks if the value is of given type: string, null, date,  ...etc.<br>You can also pass an array of types to evaluate, field._type=null,date                                      |
-| _regex          | field._regex=                    | Evaluates value based on a regex expression                                                              |
-| _array_match    | field._array_match=              | Checks if an array field contains the requested value                                                    |
-| _array_all      | field._array_all=v1,v2,v3,...    | Checks if an array field contains all requested values                                                   |
-| _array_size     | field._array_size=[num]          | Checks if the array field is of specified size                                                           | 
-| _and            | _and.field=                      | Filters out records that don't match all conditions : _and.name=someName&_and.value._gt=4                                                                                            | 
-| _or             | _or.field=                       | Returns records that match at least one condition : _or.fieldName=value&_or.orOtherField._gt=4                                                           |
-| _nor            | _nor.field=                      | Filters out records that match the conditions: _nor.name=book&_nor.price._gt=19.99                                                                                               |
+| _gt             | field._gt=[any]                  | Greater than target                                                                                      |
+| _gte            | field._gte=[any]                 | Equal or greater than target                                                                             |
+| _lt             | field._lt=[any]                  | Lower than target                                                                                        |
+| _lte            | field._lte=[any]                 | Equal or lower than target                                                                               |
+| _in             | field._in=[array]                | Equal to target or one of comma separated target values                                                  |
+| _not_in         | field._not_in=[array]            | Different than target or comma separated target values                                                   |
+| _equals         | field._equals=[any]              | Equal to target                                                                                         |
+| _not_equal      | field._not_equal=[any]           | Different than target                                                                                    |
+| _exists         | field._exists=[boolean]          | Checks if the value exists, pass true or false                                                       |
+| _type           | field._type=[string]             | Checks if the value is of given type: string, null, date,  ...etc.<br>You can also pass an array of types to evaluate, field._type=null,date                                      |
+| _regex          | field._regex=[string]            | Evaluates value based on a regex expression                                                              |
+| _array_match    | field._array_match=[any]         | Checks if an array field contains the requested value                                                    |
+| _array_all      | field._array_all=[array]         | Checks if an array field contains all requested values                                                   |
+| _array_size     | field._array_size=[number]       | Checks if the array field is of specified size                                                           | 
+| _and            | _and.field=[any]                 | Filters out records that don't match all conditions : _and.name=someName&_and.value._gt=4                                                                                            | 
+| _or             | _or.field=[any]                  | Returns records that match at least one condition : _or.fieldName=value&_or.orOtherField._gt=4                                                           |
+| _nor            | _nor.field=[any]                 | Filters out records that match the conditions: _nor.name=book&_nor.price._gt=19.99                                                                                               |
  
 
-### Read and update modifiers
+### Response modifiers
 
 These are treated as reserved keywords and you should avoid using them as database table field names. 
 
 | Param         | Usage                     | Description                                                                                                                                                     |
 | ------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| _only         | _only=                    | Specifies which fields should be included with the response. Accepts comma separated fields or a single field. Usage with 'except' in one query is prohibited.  |
-| _except       | _except=                  | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Usage with 'only' in one query is prohibited.        |
-| _skip         | _skip=                    | How many records to skip. Accepts an integer value.                                                                                                             |
-| _limit        | _limit=                   | Caps results number to a specified integer value.                                                                                                               |
-| _sort         | _sort.field=              | Sorts data by a specified field, should be either 1 (ascending order) or -1 (descending order).                                                                 |     
-| _slice        | _slice=[start],[end]      | Gets a range of records.                                                                                                                                        |               
-| _set          | _set.field=               | Sets a value to the target value.                                                                                                                               |
-| _inc          | _inc.field=               | Increments a number value by specified positive or negative value.                                                                                              |
-| _cdate        | _cdate.field._type=        | Updates a field to a current date or timestamp, _cdate.updated_at._type=date or _cdate.updated_at._type=timestamp.                                                | 
+| _only         | _only=[array]             | Specifies which fields should be included with the response. Accepts comma separated fields or a single field. Usage with 'except' in one query is prohibited.  |
+| _except       | _except=[array]           | Specifies which fields not to icnlude with the response. Accepts comma separated fields or a single field. Usage with 'only' in one query is prohibited.        |
+| _skip         | _skip=[number]            | How many records to skip. Accepts an integer value.                                                                                                             |
+| _limit        | _limit=[number]           | Caps results number to a specified integer value.                                                                                                               |
+| _sort         | _sort.field=[number]      | Sorts data by a specified field, should be either 1 (ascending order) or -1 (descending order).                                                                 |     
+| _slice        | _slice=[array]            | Gets a range of records.                                                                                                                                        |                                                                                                                                          | 
 | _array_slice  | _array_slice.field=[num]  | Specifies how many values to return from an array field.                                                                                                        |
+
+
+### Insert and update
+
+Operators to be used inside a body object of POST and PUT http requests
+
+| Param         | Usage                         | Description                                                                                                                                                     |
+| ------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |                                                                                                                      |               
+| _set          | _set.field=[any]              | Updateds a value to the target value, should be used with http PUT call                                                                                                                          |
+| _inc          | _inc.field=[number]           | Increments a number value by specified positive or negative value.                                                                                              |
+| _cdate        | _cdate.field._type=[string]   | Updates a field to a current date or timestamp, _cdate.updated_at._type=date or _cdate.updated_at._type=timestamp.                                                | 
+| _save         | _save=[array]                 | Specifies an array of records to be inserted into database                                                                                                       |
 
 
 
 ### Run from terminal
 
-#### Usage
+Run a database query using a built-in command line interface
 
 Include this line in you package json scripts
+
+The path argument point to you local files
 
 ```json
 
