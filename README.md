@@ -397,7 +397,6 @@ Add a line to your package.json scripts as shown in the example below.
 
     {
         "scripts" : {
-            // other scripts
             "seed": "db-essentials-seed path/to/seeders path/to/database_files persist"
         }
     }
