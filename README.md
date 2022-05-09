@@ -291,7 +291,7 @@ const body = JSON.stringify({
 
 These are treated as reserved keywords and you should avoid using them as database table field names.<br>Filters can access deep nested fields, as example: field.nested.nested._exists=true 
 
-Records are indexed by _id field, which holds a numeric value, it's auto generated, and you can treat it as a usual field, example: 
+Records are indexed by _id field, which holds a numeric value, it's auto generated, and you can treat it as a usual field. Other underscore starting field area treated as operators. 
 
 | Param           | Usage                            | Description                                                                                              |
 | --------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------- |

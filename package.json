@@ -3,6 +3,7 @@
     "author": "Jakub Bystroński",
     "version": "1.0.0",
     "description": "Database abstraction layer for nodejs",
+    "repository": "jbystronski/db-essentials",
     "main": "index.js",
     "license": "MIT",
     "engines": {
