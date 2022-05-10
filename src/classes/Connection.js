@@ -7,7 +7,7 @@ module.exports = class Connection {
     this.mode = mode;
     this.db = config.database
       ? path.resolve(config.database)
-      : path.resolve(__dirname, "./../../@dev/test_files");
+      : path.resolve(__dirname, "./../../example/test_files");
 
     this.instance = {};
   }

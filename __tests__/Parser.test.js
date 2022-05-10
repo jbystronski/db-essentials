@@ -66,13 +66,13 @@ describe("Testing Parser methods", function () {
     assert.equal(parser.isType({}, "object"), true);
     assert.equal(parser.isType(null, "null"), true);
     assert.equal(parser.isType(12, "number"), true);
-    // assert.equal(parser.isType(false, "boolean"), true);
+
     assert.equal(parser.isType(undefined, "undefined"), true);
     assert.equal(parser.isType([1, 2, 3], "array"), true);
     assert.equal(parser.isType("", "string"), true);
     assert.equal(parser.isType(-0.876, "number"), true);
     assert.equal(parser.isType(Math, "math"), true);
-    // passing an array of types to check is allowed
+
     assert.equal(parser.isType(null, ["object", "string"]), false);
   });
 });

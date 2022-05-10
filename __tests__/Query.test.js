@@ -27,42 +27,4 @@ describe("Testing Query class", () => {
       }
     ]);
   });
-
-  // it("Filter records by a nested property and get only that property, note: _id is included by default ", async () => {
-  //   const conn = await cachedConnection();
-  //   const value = "hidden mouse value";
-  //   const url =
-  //     "/find/test_data?nested.hidden.value=" +
-  //     value +
-  //     "&_only=nested.hidden.value";
-  //   const res = await new Query(conn).run(url);
-  //   assert.deepEqual(res, [
-  //     {
-  //       _id: 3,
-  //       nested: {
-  //         hidden: {
-  //           value: "hidden mouse value"
-  //         }
-  //       }
-  //     }
-  //   ]);
-  // });
-
-  // it("Should return table name string", async () => {
-  //   const conn = await cachedConnection();
-  //   const res = await new Query(conn).run("https://somedomain/find/users");
-
-  //   assert.equal(res.table, "users");
-  // });
-
-  // it("Should return url string", async () => {
-  //   const conn = await cachedConnection();
-  //   const res = await new Query(conn).run("https://somedomain/find/users");
-  //   assert.equal(res.url, "https://somedomain/find/users");
-  // });
-
-  // it("Should return cached connection", async () => {
-  //   const conn = await cachedConnection();
-  //   assert.equal(conn.isCached, true);
-  // });
 });

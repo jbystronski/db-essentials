@@ -12,9 +12,9 @@
     },
     "scripts": {
         "test": "mocha __tests__/index.test.js",
-        "seed": "./bin/seed.js ./@dev/seeders ./@dev/test_files persist ${table} ${count}",
-        "query": "./bin/query.js db=./@dev/test_files mode=persist ${q} ${asString}",
-        "q": "./bin/query.js db=./@dev/test_files mode=persist ${q} ${asString}"
+        "seed": "./bin/seed.js ./example/seeders ./example/test_files persist ${table} ${count}",
+        "query": "./bin/query.js db=./example/test_files mode=persist ${q} ${asString}",
+        "q": "./bin/query.js db=./example/test_files mode=persist ${q} ${asString}"
     },
     "bin": {
         "@db-essentials-seed": "./bin/seed.js",
