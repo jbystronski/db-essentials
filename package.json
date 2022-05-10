@@ -16,8 +16,8 @@
         "q": "./bin/query.js db=./@dev/test_files mode=persist ${q} ${asString}"
     },
     "bin": {
-        "db-essentials-seed": "./bin/seed.js",
-        "db-essentials-query": "./bin/query.js"
+        "@db-essentials-seed": "./bin/seed.js",
+        "@db-essentials-query": "./bin/query.js"
     },
     "keywords": [
         

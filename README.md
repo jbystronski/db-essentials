@@ -33,11 +33,11 @@ Lightweight and fast local json database manager
 
 ````bash
 
-    npm install db-essentials --save
+    npm install @db-essentials/base --save
 
     or
 
-    yarn add db-essentials
+    yarn add @db-essentials/base
 
 ````
 ## HTTP methods
@@ -97,7 +97,7 @@ Recommended way is to cache a connection for further usage.
 
 ```js
 
-const {cachedConnection} = require('db-essentials')
+const {cachedConnection} = require('@db-essentials/base')
 
 const mode = 'persist'
 
@@ -109,7 +109,7 @@ Alternatively, establish a new connection.
 
 ```js
 
-const {resolveConnection} = require('db-essentials)
+const {resolveConnection} = require('@db-essentials/base)
 
 const mode = 'persist'
 
@@ -135,7 +135,7 @@ Full example
 
 ```js
 
-const {Query, cachedConnection} = require('db-essentials')
+const {Query, cachedConnection} = require('@db-essentials/base')
 
 const q = new Query(await cachedConnection({database: 'path'}, 'persist'))
 
@@ -357,7 +357,7 @@ The path argument point to you local files
     {
         "scripts" : {
             // other scripts
-            "query" : "db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=persit
+            "query" : "@db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=persit
         }
     }
 
@@ -397,7 +397,7 @@ Add a line to your package.json scripts as shown in the example below.
 
     {
         "scripts" : {
-            "seed": "db-essentials-seed path/to/seeders path/to/database_files persist"
+            "seed": "@db-essentials-seed path/to/seeders path/to/database_files persist"
         }
     }
 
