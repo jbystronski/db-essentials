@@ -123,7 +123,7 @@ Each query is represented by an isolated Query instance. Pass a connection insta
                                                                            |
 ```js
 
-    const {Query} = require('db-essentials')
+    const {Query} = require('@db-essentials/base')
 
     const q = new Query(conn)
 
