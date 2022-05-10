@@ -357,7 +357,7 @@ The path argument point to you local files
     {
         "scripts" : {
             // other scripts
-            "query" : "@db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=persit
+            "query" : "db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=persit
         }
     }
 
@@ -397,7 +397,7 @@ Add a line to your package.json scripts as shown in the example below.
 
     {
         "scripts" : {
-            "seed": "@db-essentials-seed path/to/seeders path/to/database_files persist"
+            "seed": "db-essentials-seed path/to/seeders path/to/database_files persist"
         }
     }
 
