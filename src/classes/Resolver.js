@@ -55,6 +55,10 @@ module.exports = class QueryResolver {
     await this.run(q, b);
   }
 
+  parseEncodedCommas(str) {
+    return str.replaceAll("%2C", ",");
+  }
+
   getError(e, msg = null) {
     this.error = new ErrorHandler(e, {
       msg: msg
@@ -70,6 +74,7 @@ module.exports = class QueryResolver {
     this.body = body && typeof body === "string" ? JSON.parse(body) : body;
 
     try {
+      query = this.parseEncodedCommas(query);
       this.query = query;
       this.url = query;
 
