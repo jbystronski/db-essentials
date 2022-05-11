@@ -155,9 +155,25 @@ module.exports = class LocalParser extends Parser {
   }
 
   _skip() {
+    if (this.queryObject.hasOwnProperty("_limit")) return;
+
     if (!this.copy.length) return;
     try {
       this.copy = this.copy.slice(this.getQueryProp("_skip"));
+    } catch (e) {
+      this.getError(e);
+    }
+  }
+
+  _limit() {
+    if (!this.copy.length) return;
+
+    const toSkip = this.queryObject.hasOwnProperty("_skip")
+      ? this.getQueryProp("_skip")
+      : 0;
+
+    try {
+      this.copy = this.copy.slice(toSkip, this.getQueryProp("_limit") + toSkip);
     } catch (e) {
       this.getError(e);
     }
@@ -207,8 +223,6 @@ module.exports = class LocalParser extends Parser {
   }
 
   _cdate() {
-    // TODO: check
-
     try {
       const [dottedProps, type] = this.stringifyPath(
         this.getQueryProp("_cdate")
@@ -220,15 +234,6 @@ module.exports = class LocalParser extends Parser {
       this.copy = this.copy.map((rec) =>
         this.modifyObjectProperty(path, rec, date)
       );
-    } catch (e) {
-      this.getError(e);
-    }
-  }
-
-  _limit() {
-    if (!this.copy.length) return;
-    try {
-      this.copy = this.copy.slice(0, this.getQueryProp("_limit"));
     } catch (e) {
       this.getError(e);
     }
