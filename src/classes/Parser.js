@@ -244,11 +244,9 @@ module.exports = class Parser {
 
   reorderAfterParsers() {
     try {
-      console.log("BPQ", this.afterParsersQueue);
       this.afterParsersQueue.sort((a, b) =>
         this.afterParsersPriority[a] > this.afterParsersPriority[b] ? 1 : -1
       );
-      console.log("APQ", this.afterParsersQueue);
     } catch (e) {
       this.getError(e);
     }
@@ -256,7 +254,6 @@ module.exports = class Parser {
 
   mergeObjects(objectsArr) {
     try {
-      // Variables
       let target = {};
 
       let merger = (obj) => {
@@ -265,17 +262,14 @@ module.exports = class Parser {
             if (
               Object.prototype.toString.call(obj[prop]) === "[object Object]"
             ) {
-              // If we're doing a deep merge and the property is an object
               target[prop] = this.mergeObjects([target[prop], obj[prop]]);
             } else {
-              // Otherwise, do a regular merge
               target[prop] = obj[prop];
             }
           }
         }
       };
 
-      //Loop through each object and conduct a merge
       for (let i = 0; i < objectsArr.length; i++) {
         merger(objectsArr[i]);
       }

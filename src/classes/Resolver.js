@@ -110,11 +110,9 @@ module.exports = class QueryResolver {
 
     try {
       query = this.parseEncodedUri(query);
-      console.log("parsed qury", query);
+
       this.query = query;
       this.url = query;
-
-      // check if there are any query params
 
       if (query.indexOf("?") !== -1) {
         const [url, queryParams] = query.split("?");
@@ -124,8 +122,6 @@ module.exports = class QueryResolver {
         this.url = url;
       }
       const segments = this.url.split("/").reverse();
-
-      // match query action
 
       this.action = this.matchAction(segments[1]);
 

@@ -154,8 +154,6 @@ module.exports = class LocalParser extends Parser {
   }
 
   _skip() {
-    // if (this.queryObject.hasOwnProperty("_limit")) return;
-
     if (!this.copy.length) return;
     try {
       this.copy = this.copy.slice(this.getQueryProp("_skip"));
@@ -166,10 +164,6 @@ module.exports = class LocalParser extends Parser {
 
   _limit() {
     if (!this.copy.length) return;
-
-    const toSkip = this.queryObject.hasOwnProperty("_skip")
-      ? this.getQueryProp("_skip")
-      : 0;
 
     try {
       this.copy = this.copy.slice(0, this.getQueryProp("_limit"));
@@ -474,7 +468,6 @@ module.exports = class LocalParser extends Parser {
 
   parseInsertable() {
     try {
-      // if we have a single object instead of an array of objects to save, we push that one object to a new array
       const f = this.filtersObject;
       const arrToSave =
         "_save" in f && Array.isArray(f["_save"]) ? f["_save"] : [f];
