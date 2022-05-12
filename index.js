@@ -1,7 +1,8 @@
 module.exports = {
   cachedConnection: require("./src/cachedConnection"),
-  Parser: require("./src/classes/Parser"),
+  Connection: require("./src/classes/Connection"),
   ErrorHandler: require("./src/errors/ErrorHandler"),
+  Parser: require("./src/classes/Parser"),
   Query: require("./src/classes/Query"),
-  Connection: require("./src/classes/Connection")
+  resolveConnection: require("./src/resolveConnection")
 };
