@@ -55,8 +55,43 @@ module.exports = class QueryResolver {
     await this.run(q, b);
   }
 
-  parseEncodedCommas(str) {
-    return str.replaceAll("%2C", ",");
+  parseEncodedUri(str) {
+    const toReplace = {
+      "%2C": ",",
+      "%2F": "/",
+      "%3D": "=",
+      "%2E": ".",
+      "%26": "&",
+      "%2A": "*",
+      "%2B": "+",
+      "%2D": "-",
+      "%21": "!",
+      "%23": "%",
+      "%3F": "?",
+      "%5C": `\\`,
+      "%5E": "^",
+      "%5F": "_",
+      "%5B": "[",
+      "%5D": "]",
+      "%7E": "~",
+      "%7B": "{",
+      "%7D": "}",
+      "%7C": "|",
+      "%3A": ":",
+      "%3C": "<",
+      "%3E": ">",
+      "%3B": ";",
+      "%28": "(",
+      "%29": ")"
+    };
+
+    Object.keys(toReplace).forEach((enc) => {
+      if (str.includes(enc)) {
+        str = str.replaceAll(enc, toReplace[enc]);
+      }
+    });
+
+    return str;
   }
 
   getError(e, msg = null) {
@@ -74,7 +109,8 @@ module.exports = class QueryResolver {
     this.body = body && typeof body === "string" ? JSON.parse(body) : body;
 
     try {
-      query = this.parseEncodedCommas(query);
+      query = this.parseEncodedUri(query);
+      console.log("parsed qury", query);
       this.query = query;
       this.url = query;
 
