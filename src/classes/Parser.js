@@ -23,6 +23,18 @@ module.exports = class Parser {
       "_sort"
     ];
 
+    this.afterParsersPriority = {
+      _sort: 1,
+      _skip: 2,
+      _limit: 3,
+      _only: 4,
+      _except: 4,
+      _inc: 5,
+      _cdate: 5,
+      _slice: 5,
+      _array_slice: 5
+    };
+
     this.arrayKeywords = [
       "_array_all",
       "_except",
@@ -209,6 +221,8 @@ module.exports = class Parser {
         this.afterParsers.includes(k) && this.afterParsersQueue.push(k);
       });
 
+      this.reorderAfterParsers();
+
       // shift some functions from queries object to filters object
       for (const k of Object.keys(this.queryObject)) {
         if (k === "_save") {
@@ -223,6 +237,18 @@ module.exports = class Parser {
           delete this.queryObject[k];
         }
       }
+    } catch (e) {
+      this.getError(e);
+    }
+  }
+
+  reorderAfterParsers() {
+    try {
+      console.log("BPQ", this.afterParsersQueue);
+      this.afterParsersQueue.sort((a, b) =>
+        this.afterParsersPriority[a] > this.afterParsersPriority[b] ? 1 : -1
+      );
+      console.log("APQ", this.afterParsersQueue);
     } catch (e) {
       this.getError(e);
     }
