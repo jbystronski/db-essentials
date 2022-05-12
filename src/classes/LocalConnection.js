@@ -9,9 +9,11 @@ module.exports = class LocalConnection extends Connection {
   }
 
   async establishConnection() {
+    await super.establishConnection();
     try {
       for (const file of await fs.readdir(this.db)) {
         const contents = await fs.readFile(`${this.db}/${file}`);
+
         const t = file.replace(".json", "");
         this.collections[t] = JSON.parse(contents);
       }
