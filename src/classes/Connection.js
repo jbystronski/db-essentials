@@ -8,18 +8,12 @@ module.exports = class Connection {
     this.db = config.database
       ? path.resolve(config.database)
       : path.resolve(__dirname, "./../../example/test_files");
-
-    this.instance = {};
   }
 
   async establishConnection() {
     try {
-      console.log("establishing connection");
       this.isConnected = true;
-
-      if (this.isConnected) {
-        this.isCached = true;
-      }
+      this.isCached = true;
 
       return this;
     } catch (error) {
