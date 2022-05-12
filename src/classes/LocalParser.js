@@ -67,7 +67,6 @@ module.exports = class LocalParser extends Parser {
           const split = compare.split("/").filter((el) => el !== "");
 
           const pattern = new RegExp(split[0], split[1]);
-          console.log("P", pattern);
 
           return value.match(pattern);
         },
@@ -155,7 +154,7 @@ module.exports = class LocalParser extends Parser {
   }
 
   _skip() {
-    if (this.queryObject.hasOwnProperty("_limit")) return;
+    // if (this.queryObject.hasOwnProperty("_limit")) return;
 
     if (!this.copy.length) return;
     try {
@@ -173,7 +172,7 @@ module.exports = class LocalParser extends Parser {
       : 0;
 
     try {
-      this.copy = this.copy.slice(toSkip, this.getQueryProp("_limit") + toSkip);
+      this.copy = this.copy.slice(0, this.getQueryProp("_limit"));
     } catch (e) {
       this.getError(e);
     }
