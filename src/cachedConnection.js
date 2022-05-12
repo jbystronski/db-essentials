@@ -1,4 +1,3 @@
-const Connection = require("./classes/Connection");
 const resolveConnection = require("./resolveConnection");
 
 let connection = null;
@@ -13,8 +12,11 @@ module.exports = async function cachedConnection(
       connection.mode !== mode ||
       connection.db !== config.database
     ) {
-      const Instance = resolveConnection(mode);
-      connection = await new Instance(config, mode).establishConnection();
+      const Resolved = resolveConnection(mode);
+      const Instance = new Resolved(config, mode);
+      connection = await Instance.establishConnection();
+
+      return connection;
     }
 
     return connection;
