@@ -10,7 +10,7 @@ module.exports = async function cachedConnection(
     if (
       !connection ||
       connection.mode !== mode ||
-      connection.db !== config.database
+      (config.database !== null && connection.db !== config.database)
     ) {
       const Resolved = resolveConnection(mode);
       const Instance = new Resolved(config, mode);
