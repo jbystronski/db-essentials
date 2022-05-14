@@ -350,6 +350,7 @@ module.exports = class LocalParser extends Parser {
   }
 
   parseFind() {
+    if (!this.data.length) return [];
     try {
       this.runInitialParsing();
 
@@ -370,6 +371,8 @@ module.exports = class LocalParser extends Parser {
   }
 
   parseFindOne() {
+    if (!this.data.length) return null;
+
     let found = false;
 
     try {
@@ -383,14 +386,14 @@ module.exports = class LocalParser extends Parser {
       }
 
       if (!found) {
-        this.copy = null;
-      }
+        return null;
+      } else {
+        for (const fn of this.afterParsersQueue) {
+          this[fn]();
+        }
 
-      for (const fn of this.afterParsersQueue) {
-        this[fn]();
+        return this.copy[0];
       }
-
-      return this.copy[0];
     } catch (e) {
       this.getError(e);
     }
@@ -416,6 +419,7 @@ module.exports = class LocalParser extends Parser {
   }
 
   parseUpdateMany() {
+    if (!this.data.length) return [];
     try {
       this.runInitialParsing();
 
@@ -443,6 +447,7 @@ module.exports = class LocalParser extends Parser {
   }
 
   parseUpdateOne() {
+    if (!this.data.length) return [];
     try {
       this.runInitialParsing();
 
@@ -489,6 +494,7 @@ module.exports = class LocalParser extends Parser {
   }
 
   parseDeleteOne() {
+    if (!this.data.length) return [];
     try {
       this.runInitialParsing();
       let toDelete = null;
@@ -510,6 +516,7 @@ module.exports = class LocalParser extends Parser {
   }
 
   parseDeleteMany() {
+    if (!this.data.length) return [];
     try {
       this.runInitialParsing();
 
