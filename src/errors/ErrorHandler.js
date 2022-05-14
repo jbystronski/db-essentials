@@ -1,14 +1,13 @@
-module.exports = class ErrorHandler extends Error {
+module.exports = class ErrorHandler {
   constructor(e, config = { msg: null }) {
-    super(e);
-    this.error = e;
+    this.error = e || new Error();
 
     this.msg = config.msg || e.message;
     this.handle();
   }
 
   handle() {
-    this.error.message = this.message;
+    this.error.message = this.msg;
     throw this.error;
   }
 };

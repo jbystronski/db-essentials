@@ -77,6 +77,8 @@ module.exports = class Query extends Resolver {
   }
 
   async findOne() {
+    this.abortOnMissingCollection(this.table);
+
     try {
       return this.parser.parseFindOne();
     } catch (e) {
@@ -85,6 +87,8 @@ module.exports = class Query extends Resolver {
   }
 
   async find() {
+    this.abortOnMissingCollection(this.table);
+
     try {
       return this.parser.parseFind();
     } catch (e) {
@@ -93,6 +97,8 @@ module.exports = class Query extends Resolver {
   }
 
   async updateOne() {
+    this.abortOnMissingCollection(this.table);
+
     try {
       const [updatedRecord, data] = this.parser.parseUpdateOne();
 
@@ -106,6 +112,8 @@ module.exports = class Query extends Resolver {
   }
 
   async updateMany() {
+    this.abortOnMissingCollection(this.table);
+
     try {
       const [count, data] = this.parser.parseUpdateMany();
 
@@ -130,6 +138,8 @@ module.exports = class Query extends Resolver {
   }
 
   async deleteMany() {
+    this.abortOnMissingCollection(this.table);
+
     try {
       const [count, data] = this.parser.parseDeleteMany();
 
@@ -143,6 +153,8 @@ module.exports = class Query extends Resolver {
   }
 
   async deleteOne() {
+    this.abortOnMissingCollection(this.table);
+
     try {
       const [deleted, data] = this.parser.parseDeleteOne();
 
@@ -167,6 +179,18 @@ module.exports = class Query extends Resolver {
   updateCollection(name, data) {
     try {
       this.connection.collections[name] = data;
+    } catch (e) {
+      this.getError(e);
+    }
+  }
+
+  abortOnMissingCollection(name) {
+    try {
+      const coll = this.getCollection(name);
+      if (!coll.length) {
+        this.getError(new ReferenceError(), `Collection ${name} not found!`);
+      }
+      return true;
     } catch (e) {
       this.getError(e);
     }
