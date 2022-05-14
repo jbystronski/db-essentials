@@ -6,7 +6,6 @@ module.exports = class Query extends Resolver {
   constructor(connection) {
     super();
     this.connection = connection;
-    this._db = {};
   }
 
   async fileExists() {
@@ -26,17 +25,6 @@ module.exports = class Query extends Resolver {
       const parsed = JSON.parse(stringContent);
 
       return parsed;
-    } catch (e) {
-      this.getError(e);
-    }
-  }
-
-  async getDbCollection(name) {
-    try {
-      const contents = await this.getFileContents(
-        `${this.connection.db}/${name}.json`
-      );
-      return contents;
     } catch (e) {
       this.getError(e);
     }
@@ -106,10 +94,10 @@ module.exports = class Query extends Resolver {
 
   async updateOne() {
     try {
-      const [updatedRecord, updatedData] = this.parser.parseUpdateOne();
+      const [updatedRecord, data] = this.parser.parseUpdateOne();
 
-      this._db[this.table] = updatedData;
-      this.shouldPersist(updatedData);
+      this.updateCollection(this.table, data);
+      this.shouldPersist(data);
 
       return updatedRecord;
     } catch (e) {
@@ -121,7 +109,7 @@ module.exports = class Query extends Resolver {
     try {
       const [count, data] = this.parser.parseUpdateMany();
 
-      this._db[this.table] = data;
+      this.updateCollection(this.table, data);
       this.shouldPersist(data);
       return `updated records: ${count}`;
     } catch (e) {
@@ -133,7 +121,7 @@ module.exports = class Query extends Resolver {
     try {
       const [saved, data] = this.parser.parseInsertable();
 
-      this._db[this.table] = data;
+      this.updateCollection(this.table, data);
       this.shouldPersist(data);
       return saved;
     } catch (e) {
@@ -145,7 +133,7 @@ module.exports = class Query extends Resolver {
     try {
       const [count, data] = this.parser.parseDeleteMany();
 
-      this._db[this.table] = data;
+      this.updateCollection(this.table, data);
       this.shouldPersist(data);
 
       return `deleted records: ${count}`;
@@ -158,7 +146,7 @@ module.exports = class Query extends Resolver {
     try {
       const [deleted, data] = this.parser.parseDeleteOne();
 
-      this._db[this.table] = data;
+      this.updateCollection(this.table, data);
 
       this.shouldPersist(data);
 
@@ -172,6 +160,14 @@ module.exports = class Query extends Resolver {
     try {
       return this.connection.collections[name] || [];
     } catch (error) {
+      this.getError(e);
+    }
+  }
+
+  updateCollection(name, data) {
+    try {
+      this.connection.collections[name] = data;
+    } catch (e) {
       this.getError(e);
     }
   }
