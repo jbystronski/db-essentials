@@ -1,7 +1,7 @@
 {
     "name": "@db-essentials/base",
     "author": "Jakub Bystroński",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "Database abstraction layer for nodejs",
     "repository": "jbystronski/db-essentials",
     "homepage": "https://github.com/jbystronski/db-essentials",
