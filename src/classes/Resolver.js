@@ -1,5 +1,5 @@
 const ErrorHandler = require("../errors/ErrorHandler");
-module.exports = class QueryResolver {
+module.exports = class Resolver {
   constructor() {
     // no instantiation of the top class allowed
 
@@ -45,14 +45,6 @@ module.exports = class QueryResolver {
 
   async _dumpDocumentIds() {
     return this.mustImplement(arguments.callee.name);
-  }
-
-  async query(q, b) {
-    await this.run(q, b);
-  }
-
-  async q(q, b) {
-    await this.run(q, b);
   }
 
   parseEncodedUri(str) {
@@ -101,14 +93,14 @@ module.exports = class QueryResolver {
   }
 
   async run(query = null, body = null) {
-    if (!query) {
-      console.log(`Cannot run a query against nothing`);
-      return;
-    }
-
-    this.body = body && typeof body === "string" ? JSON.parse(body) : body;
-
     try {
+      if (!query) {
+        console.log(`Cannot run a query against nothing`);
+        return;
+      }
+
+      this.body = body && typeof body === "string" ? JSON.parse(body) : body;
+
       query = this.parseEncodedUri(query);
 
       this.query = query;
