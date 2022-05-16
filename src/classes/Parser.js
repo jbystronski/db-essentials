@@ -296,10 +296,6 @@ module.exports = class Parser {
     }
   }
 
-  getQueue() {
-    return this.parserQueue;
-  }
-
   getQueryObject() {
     return this.queryObject;
   }
@@ -310,10 +306,5 @@ module.exports = class Parser {
 
   getFiltersObject() {
     return this.filtersObject;
-  }
-
-  clear() {
-    this.queryObject = {};
-    this.bodyObject = {};
   }
 };
