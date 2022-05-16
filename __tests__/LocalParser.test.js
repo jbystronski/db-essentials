@@ -5,11 +5,6 @@ const p = new LocalParser();
 
 describe("Testing LocalParser methods", () => {
   it("Functions grouped in filterFunctions method should return false, true based on the input", async () => {
-    assert.equal(
-      p.filterFunctions("_not_in", ["toy", "food", "book"], "hand"),
-      true
-    );
-
     assert.equal(p.filterFunctions("_not_equal", "book", "hand"), true);
     assert.equal(p.filterFunctions("_gt", 3, 14), true);
     assert.equal(p.filterFunctions("_lt", 3, 14), false);
