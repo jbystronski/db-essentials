@@ -5,9 +5,7 @@ module.exports = class Connection {
     this.isCached = false;
     this.isConnected = false;
     this.mode = mode;
-    this.db = config.database
-      ? path.resolve(config.database)
-      : path.resolve(__dirname, "./../../example/test_files");
+    this.db = path.resolve(config.database);
   }
 
   async establishConnection() {
