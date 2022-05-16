@@ -1,12 +1,11 @@
 const resolveConnection = require("./resolveConnection");
-const ErrorHandler = require("../src/errors/ErrorHandler");
 
 let connection = null;
 
 module.exports = async function cachedConnection(config, mode = "no_persist") {
   try {
     if (!config.database) {
-      this.getError(new Error(), "unmet database credentials");
+      throw new Error("Unmet database credentials");
     }
 
     if (
