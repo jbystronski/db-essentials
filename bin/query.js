@@ -2,8 +2,8 @@
 
 const [db, mode, q, toString = false] = process.argv.slice(2);
 
-const Query = require("./../src/classes/Query");
-const cachedConnection = require("./../src/cachedConnection");
+const Query = require("../src/lib/Query");
+const Connection = require("../src/lib/Connection");
 
 (async function () {
   if (!q) {
@@ -14,18 +14,19 @@ const cachedConnection = require("./../src/cachedConnection");
   try {
     console.time("query time");
 
-    const res = await new Query(
-      await cachedConnection(
-        {
-          database: db.replace("db=", "")
-        },
-        mode.replace("mode=", "")
-      )
-    ).run(q);
+    const conn = await Connection.create({
+      label: "default",
+      database: db.replace("db=", ""),
+      mode: mode.replace("mode=", ""),
+    });
 
-    console.log("query result: ", toString ? JSON.stringify(res) : res);
+    const query = Query.create({ connection: conn, url: q });
+
+    const result = await query.run();
+
+    console.log("query result: ", toString ? JSON.stringify(result) : result);
     console.timeEnd("query time");
   } catch (e) {
-    throw new Error(e);
+    conosole.error(e);
   }
 })();
