@@ -1,0 +1,31 @@
+{
+    "name": "@db-essentials/base",
+    "author": "Jakub Bystroński",
+    "version": "1.0.7",
+    "description": "Database abstraction layer for nodejs",
+    "repository": "jbystronski/db-essentials",
+    "homepage": "https://github.com/jbystronski/db-essentials",
+    "main": "index.js",
+    "license": "MIT",
+    "engines": {
+        "node": ">=10"
+    },
+    "scripts": {
+        "test": "mocha __tests__/index.test.js",
+        "seed": "./bin/seed.js ./example/seeders ./example/test_files persist ${table} ${count}",
+        "query": "./bin/query.js db=./example/test_files mode=persist ${q} ${asString}",
+        "q": "./bin/query.js db=./example/test_files mode=persist ${q} ${asString}"
+    },
+    "bin": {
+        "db-essentials-seed": "./bin/seed.js",
+        "db-essentials-query": "./bin/query.js"
+    },
+    "keywords": [
+        "database",
+        "nosql",
+        "query"
+    ],
+    "devDependencies": {
+        "mocha": "^9.2.2"
+    }
+}
