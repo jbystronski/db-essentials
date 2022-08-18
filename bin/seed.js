@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 const path = require("path");
-const cachedConnection = require("../src/cachedConnection");
-const Query = require("../src/classes/Query");
+
+const Query = require("../src/lib/Query");
+const Connection = require("../src/lib/Connection");
 
 const [seederFilesPath, database, mode, table, count = 1] =
   process.argv.slice(2);
@@ -44,11 +45,22 @@ try {
       seederPayload.length > 1 ? { _save: seederPayload } : seederPayload[0];
     const method = seederPayload.length > 1 ? "save_many" : "save_one";
 
-    const q = await new Query(
-      await cachedConnection({ database: database }, mode)
-    ).run(`${method}/${table}`, toSave);
+    const conn = await Connection.create({
+      database: database,
+      mode: mode,
+      label: "defaultConnection",
+    });
 
-    console.log("Created documents: " + count);
+    const q = Query.create({
+      url: `${method}/${table}`,
+      body: toSave,
+      connection: conn,
+    });
+
+    const result = await q.run();
+
+    console.log("Inserted records", result);
+
     console.timeEnd("Time");
   })();
 } catch (e) {
