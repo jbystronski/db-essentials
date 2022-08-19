@@ -43,7 +43,7 @@ exports.create = async ({ database, mode, label }) => {
 
   active[label] = {
     label: label,
-    db: db,
+    database: db,
     mode: mode,
     getCollection: async (name) => await getCollection(db, name),
     getAllCollections: async () => await getAllCollections(db),
