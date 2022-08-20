@@ -1,38 +1,38 @@
 const mergeObjects = require("../utils/mergeObjects");
 const { matchCondition } = require("../utils/filterData");
 
-async function updateOne({ initialData, filters, queries, runPostParser }) {
+async function updateOne({ data, filters, queries: { _set }, runPostParser }) {
   let payload;
-  for (const record of initialData) {
+  for (const record of data) {
     if (!matchCondition(record, filters).includes(false)) {
-      payload = [mergeObjects([record, queries["_set"]])];
+      payload = [mergeObjects([record, _set])];
 
       break;
     }
   }
 
-  const parsedPayload = runPostParser(payload);
+  const updated = runPostParser(payload);
 
   return {
-    data: mergeCopyAndOriginal(initialData, parsedPayload),
-    payload: parsedPayload,
+    save: mergeCopyAndOriginal(data, updated),
+    payload: updated,
   };
 }
 
-async function updateMany({ initialData, filters, queries }) {
+async function updateMany({ data, filters, queries: { _set } }) {
   let count = 0;
 
-  const payload = initialData
+  const payload = data
     .map((record) => {
       if (!matchCondition(record, filters).includes(false)) {
         count++;
-        return mergeObjects([record, queries["_set"]]);
+        return mergeObjects([record, _set]);
       }
     })
     .filter((record) => !!record);
 
   return {
-    data: mergeCopyAndOriginal(initialData, payload),
+    save: mergeCopyAndOriginal(data, payload),
     payload: `Updated records: ${count}`,
   };
 }

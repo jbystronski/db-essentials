@@ -30,11 +30,9 @@ exports.PRIORITIES = {
   _array_slice: 5,
 };
 
-exports._skip = ({ data, queries }) =>
-  !data.length ? [] : data.slice(queries["_skip"]);
+exports._skip = ({ data, queries }) => data.slice(queries["_skip"]);
 
-exports._limit = ({ data, queries }) =>
-  !data.length ? [] : data.slice(0, queries["_limit"]);
+exports._limit = ({ data, queries }) => data.slice(0, queries["_limit"]);
 
 exports._array_slice = ({ data, queries }) => {
   const [props, array_slice] = stringifyPath(queries["_array_slice"]);
@@ -66,17 +64,10 @@ exports._cdate = ({ data, queries }) => {
   );
 };
 
-exports._slice = ({ data, queries }) => {
-  const { _slice: s } = queries;
+exports._slice = ({ data, queries: { _slice: s } }) =>
+  data.slice(s[0], s[0] + s[1]);
 
-  return data.length ? data.slice(s[0], s[0] + s[1]) : [];
-};
-
-exports._except = ({ data, queries }) => {
-  const { _only: only, _except: except } = queries;
-
-  if (!data.length) return [];
-
+exports._except = ({ data, queries: { _except: except, _only: only } }) => {
   if (only) {
     throw new Error(`'only' and 'except' cannot be used in the same request`);
   }
@@ -88,11 +79,7 @@ exports._except = ({ data, queries }) => {
   return data;
 };
 
-exports._only = ({ data, queries }) => {
-  const { _except: except, _only: only } = queries;
-
-  if (!data.length) return [];
-
+exports._only = ({ data, queries: { _except: except, _only: only } }) => {
   if (except) {
     throw new Error(`'only' and 'except' cannot be used in the same request`);
   }
@@ -108,11 +95,7 @@ exports._only = ({ data, queries }) => {
   return data;
 };
 
-exports._sort = ({ data, queries }) => {
-  const { _sort: query } = queries;
-
-  if (!data.length) return null;
-
+exports._sort = ({ data, queries: { _sort: q } }) => {
   const compare = (a, b, dir) => {
     if (a < b) {
       return dir === -1 ? 1 : -1;
@@ -123,8 +106,8 @@ exports._sort = ({ data, queries }) => {
     return 0;
   };
 
-  for (const sortKey in query) {
-    data.sort((a, b) => compare(a[sortKey], b[sortKey], query[sortKey]));
+  for (const sortKey in q) {
+    data.sort((a, b) => compare(a[sortKey], b[sortKey], q[sortKey]));
   }
 
   return data;

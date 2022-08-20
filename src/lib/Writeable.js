@@ -1,21 +1,19 @@
-async function insert({ initialData, filters }) {
-  const inserted =
+async function insert({ data, filters }) {
+  const toSave =
     "_save" in filters && Array.isArray(filters["_save"])
       ? filters["_save"]
       : [filters];
 
-  let lastId = initialData.length
-    ? initialData[initialData.length - 1]["_id"] + 1
-    : 1;
+  let lastId = data.length ? data[data.length - 1]["_id"] + 1 : 1;
 
-  inserted.forEach((el) => {
+  toSave.forEach((el) => {
     el["_id"] = lastId;
     lastId++;
   });
 
   return {
-    data: [...initialData, ...inserted],
-    payload: inserted,
+    save: [...data, ...toSave],
+    payload: toSave,
   };
 }
 

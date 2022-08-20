@@ -1,30 +1,26 @@
 const { matchCondition } = require("../utils/filterData");
 
-async function findOne({ initialData, filters, runPostParser }) {
-  let found = null;
-  let copy = JSON.parse(JSON.stringify(initialData));
+async function findOne({ data, filters, runPostParser }) {
+  let found;
 
-  for (const record of copy) {
+  for (const record of data) {
     if (!matchCondition(record, filters).includes(false)) {
-      found = true;
-      copy = [record];
+      found = record;
       break;
     }
   }
 
   return {
-    payload: !found ? null : runPostParser(copy)[0],
+    payload: found ? runPostParser([found]) : null,
   };
 }
 
-async function find({ initialData, filters, runPostParser }) {
+async function find({ data, filters, runPostParser }) {
   const payload = filters
-    ? initialData.filter(
+    ? data.filter(
         (current) => !matchCondition(current, filters).includes(false)
       )
-    : initialData;
-
-  console.log("pd in find", payload);
+    : data;
 
   return {
     payload: runPostParser(payload),

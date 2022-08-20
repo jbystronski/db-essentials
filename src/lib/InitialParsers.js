@@ -1,32 +1,24 @@
-const { filterData: matchCondition } = require("../utils/filterData");
+const { matchCondition } = require("../utils/filterData");
 
-exports._nor = ({ data, queries }) => {
-  const { _nor: nor } = queries;
-
-  if (!data.length) return [];
-
+exports._nor = ({ data = [], queries: { _nor } }) => {
   Array.isArray(nor)
-    ? nor.forEach((condition) => {
+    ? _nor.forEach((condition) => {
         data = data.filter(
           (record) => !matchCondition(record, condition).includes(true)
         );
       })
     : (data = data.filter(
-        (record) => !matchCondition(record, nor).includes(true)
+        (record) => !matchCondition(record, _nor).includes(true)
       ));
 
   return data;
 };
 
-exports._or = ({ data, queries }) => {
-  const { _or: or } = queries;
-
-  if (!data.length) return [];
-
+exports._or = ({ data = [], queries: { _or } }) => {
   let found = [];
 
-  Array.isArray(or)
-    ? or.forEach((condition) => {
+  Array.isArray(_or)
+    ? _or.forEach((condition) => {
         const match = data.filter((record) =>
           matchCondition(record, condition).includes(true)
         );
@@ -34,24 +26,21 @@ exports._or = ({ data, queries }) => {
         found.indexOf(...match) === -1 && found.push(...match);
       })
     : (found = data.filter((record) =>
-        matchCondition(record, or).includes(true)
+        matchCondition(record, _or).includes(true)
       ));
 
   return found;
 };
 
-exports._and = ({ data, queries }) => {
-  const { _and: and } = queries;
-  if (!data.length) return;
-
+exports._and = ({ data = [], queries: { _and } }) => {
   Array.isArray(and)
-    ? and.forEach((condition) => {
+    ? _and.forEach((condition) => {
         data = data.filter(
           (record) => !matchCondition(record, condition).includes(false)
         );
       })
     : (data = data.filter(
-        (record) => !matchCondition(record, and).includes(false)
+        (record) => !matchCondition(record, _and).includes(false)
       ));
 
   return data;

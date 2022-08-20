@@ -5,14 +5,14 @@ const INITIAL_FILTERS = require("./InitialFilters");
 const InitialParsers = require("./InitialParsers");
 const PostParsers = require("./PostParsers");
 
-const httpActions = Object.freeze({
+const httpActions = {
   ...require("./Writeable"),
   ...require("./Deletable"),
   ...require("./Readable"),
   ...require("./Updateable"),
-});
+};
 
-console.log("POST FN", PostParsers);
+const SPAWN_ACTIONS = ["save_one", "save_many"];
 
 const CRUD_ACTIONS = {
   save_one: "insert",
@@ -106,8 +106,6 @@ const parseParams = (params, container = {}) => {
 };
 
 const runParserFunctions = (queue, data, queries) => {
-  console.log("queue in runParserFunctions", queue);
-
   if (queue.length) {
     try {
       for (const fn of queue) {
@@ -124,9 +122,9 @@ const runParserFunctions = (queue, data, queries) => {
   return data;
 };
 
-const create = (data, params = null, body = null) => {
+const create = (collection, params, body) => {
   return {
-    data,
+    collection,
     params,
     body,
 
@@ -137,6 +135,9 @@ const create = (data, params = null, body = null) => {
       const postParsersQueue = [];
 
       try {
+        if (!SPAWN_ACTIONS.includes(action) && !this.collection.length)
+          return `This method won't work with non-existing collection, aborting`;
+
         if (params) {
           queries = parseParams(params);
         }
@@ -146,7 +147,6 @@ const create = (data, params = null, body = null) => {
         }
 
         for (const [k, v] of Object.entries(queries)) {
-          console.log("k", k);
           k in InitialParsers && initialParsersQueue.push(InitialParsers[k]);
 
           k in PostParsers && postParsersQueue.push(PostParsers[k]);
@@ -172,9 +172,9 @@ const create = (data, params = null, body = null) => {
           const method = httpActions[CRUD_ACTIONS[action]];
 
           return await method({
-            initialData: runParserFunctions(
+            data: runParserFunctions(
               initialParsersQueue,
-              JSON.parse(JSON.stringify(this.data)),
+              JSON.parse(JSON.stringify(this.collection)),
               queries
             ),
             filters: filters,

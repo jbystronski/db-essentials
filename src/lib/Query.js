@@ -25,14 +25,14 @@ create = ({ connection, url, body }) => {
         );
 
         try {
-          const { data, payload, error } = await parser.run(
+          const { save, payload, error } = await parser.run(
             getUrlSegments(url)[1] // url action
           );
 
-          data &&
+          save &&
             connection.mode === "persist" &&
             Filesystem.persist(
-              data,
+              save,
               `${connection.database}/${getUrlSegments(url)[0]}.json`
             );
 
