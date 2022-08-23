@@ -252,17 +252,11 @@ Include this line in you package json scripts
 The path argument point to you local files
 
 ```json
-
-
-
-    {
-        "scripts" : {
-
-            "query" : "db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=persist
-        }
-    }
-
-
+{
+  "scripts": {
+    "query": "db-essentials-query path=./PATH/TO/LOCAL_DATABASE mode=persist"
+  }
+}
 ```
 
 A query must be wrapped in quotes
