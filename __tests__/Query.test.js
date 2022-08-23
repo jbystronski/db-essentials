@@ -128,14 +128,14 @@ describe("Testing Query module", async () => {
     assert.strictEqual(result, 3);
   });
 
-  it("tests find_one method, should return an array containing the first record that matches criteria", async () => {
+  it("tests find_one method, should return the first record that matches criteria", async () => {
     const query = await Query.create({
       connection: conn,
       url: "find_one/test_data?color._in=pink,blue&_only=name,color",
     });
 
     const result = await query.run();
-    assert.deepEqual(result, [{ name: "computer", color: "pink", _id: 1 }]);
+    assert.deepEqual(result, { name: "computer", color: "pink", _id: 1 });
   });
 
   it("tests find method, should return an array containing all records that matches criteria", async () => {
