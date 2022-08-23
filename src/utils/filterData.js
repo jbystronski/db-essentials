@@ -15,7 +15,7 @@ exports.matchCondition = function (record, filters, parentKey, matches = []) {
           )
         : INITIAL_FILTERS.includes(k)
         ? matches.push(
-            getFilterFunction(k, v, record[parentKey]) ? true : false
+            exports.getFilterFunction(k, v, record[parentKey]) ? true : false
           )
         : matches.push(record[k] === v || false);
     }
@@ -26,7 +26,7 @@ exports.matchCondition = function (record, filters, parentKey, matches = []) {
   }
 };
 
-const getFilterFunction = (fName, check, v) => {
+exports.getFilterFunction = function (fName, check, v) {
   try {
     const fns = {
       _in: () => check.includes(v),
