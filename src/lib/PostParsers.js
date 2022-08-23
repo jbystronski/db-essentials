@@ -67,20 +67,20 @@ exports._cdate = ({ data, queries }) => {
 exports._slice = ({ data, queries: { _slice: s } }) =>
   data.slice(s[0], s[0] + s[1]);
 
-exports._except = ({ data, queries: { _except: except, _only: only } }) => {
-  if (only) {
+exports._except = ({ data, queries: { _except: exc, _only } }) => {
+  if (_only) {
     throw new Error(`'only' and 'except' cannot be used in the same request`);
   }
 
   for (const [k, v] of data.entries()) {
-    data[k] = except.map((prop) => deleteKey(v, prop.split(".")))[0];
+    data[k] = exc.map((prop) => deleteKey(v, prop.split(".")))[0];
   }
 
   return data;
 };
 
-exports._only = ({ data, queries: { _except: except, _only: only } }) => {
-  if (except) {
+exports._only = ({ data, queries: { _except, _only: only } }) => {
+  if (_except) {
     throw new Error(`'only' and 'except' cannot be used in the same request`);
   }
 

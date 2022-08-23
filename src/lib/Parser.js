@@ -5,14 +5,14 @@ const INITIAL_FILTERS = require("./InitialFilters");
 const InitialParsers = require("./InitialParsers");
 const PostParsers = require("./PostParsers");
 
-const httpActions = {
+const dbMethods = {
   ...require("./Writeable"),
   ...require("./Deletable"),
   ...require("./Readable"),
   ...require("./Updateable"),
 };
 
-const SPAWN_ACTIONS = ["save_one", "save_many"];
+const Writeable = Object.keys(require("./Writeable"));
 
 const CRUD_ACTIONS = {
   save_one: "insert",
@@ -135,7 +135,10 @@ const create = (collection, params, body) => {
       const postParsersQueue = [];
 
       try {
-        if (!SPAWN_ACTIONS.includes(action) && !this.collection.length)
+        if (
+          !Writeable.includes(CRUD_ACTIONS[action]) &&
+          !this.collection.length
+        )
           return `This method won't work with non-existing collection, aborting`;
 
         if (params) {
@@ -152,10 +155,6 @@ const create = (collection, params, body) => {
           k in PostParsers && postParsersQueue.push(PostParsers[k]);
         }
 
-        postParsersQueue.sort((a, b) =>
-          PostParsers.PRIORITIES[a] > PostParsers.PRIORITIES[b] ? 1 : -1
-        );
-
         if ("_save" in queries) {
           filters["_save"] = JSON.parse(JSON.stringify(queries["_save"]));
           delete queries["_save"];
@@ -168,8 +167,8 @@ const create = (collection, params, body) => {
           }
         }
 
-        if (action in CRUD_ACTIONS && CRUD_ACTIONS[action] in httpActions) {
-          const method = httpActions[CRUD_ACTIONS[action]];
+        if (action in CRUD_ACTIONS && CRUD_ACTIONS[action] in dbMethods) {
+          const method = dbMethods[CRUD_ACTIONS[action]];
 
           return await method({
             data: runParserFunctions(
@@ -180,7 +179,13 @@ const create = (collection, params, body) => {
             filters: filters,
             queries: queries,
             runPostParser: (data) =>
-              runParserFunctions(postParsersQueue, data, queries),
+              runParserFunctions(
+                postParsersQueue.sort((a, b) =>
+                  PostParsers.PRIORITIES[a] > PostParsers.PRIORITIES[b] ? 1 : -1
+                ),
+                data,
+                queries
+              ),
           });
         }
         return `Unknown operation: ${action}`;

@@ -11,17 +11,22 @@ getParams = (url) => {
 };
 
 create = ({ connection, url, body }) => {
+  if (!connection) throw "Missing connection";
+
+  const { database, getCollection, mode = "persist" } = connection;
+
   return {
     async run() {
       try {
-        if (!url) throw Error(`Missing url, aborting`);
+        if (!url) throw `Missing url, aborting`;
+        if (!database) throw `No database connection, aborting`;
 
         url = parseEncodedUri(url);
 
         const parser = Parser.create(
-          (await connection.getCollection(getUrlSegments(url)[0])) || [],
+          (collectiom = (await getCollection(getUrlSegments(url)[0])) || []),
           getParams(url),
-          (body = body && typeof body === "string" ? JSON.parse(body) : body) // parse body object if present
+          body ? JSON.parse(body) : null
         );
 
         try {
@@ -30,10 +35,10 @@ create = ({ connection, url, body }) => {
           );
 
           save &&
-            connection.mode === "persist" &&
+            mode === "persist" &&
             Filesystem.persist(
               save,
-              `${connection.database}/${getUrlSegments(url)[0]}.json`
+              `${database}/${getUrlSegments(url)[0]}.json`
             );
 
           return payload;

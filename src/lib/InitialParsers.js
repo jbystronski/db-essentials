@@ -1,7 +1,7 @@
 const { matchCondition } = require("../utils/filterData");
 
-exports._nor = ({ data = [], queries: { _nor } }) => {
-  Array.isArray(nor)
+exports._nor = ({ data, queries: { _nor } }) => {
+  Array.isArray(_nor)
     ? _nor.forEach((condition) => {
         data = data.filter(
           (record) => !matchCondition(record, condition).includes(true)
@@ -14,7 +14,7 @@ exports._nor = ({ data = [], queries: { _nor } }) => {
   return data;
 };
 
-exports._or = ({ data = [], queries: { _or } }) => {
+exports._or = ({ data, queries: { _or } }) => {
   let found = [];
 
   Array.isArray(_or)
@@ -32,8 +32,8 @@ exports._or = ({ data = [], queries: { _or } }) => {
   return found;
 };
 
-exports._and = ({ data = [], queries: { _and } }) => {
-  Array.isArray(and)
+exports._and = ({ data, queries: { _and } }) => {
+  Array.isArray(_and)
     ? _and.forEach((condition) => {
         data = data.filter(
           (record) => !matchCondition(record, condition).includes(false)
