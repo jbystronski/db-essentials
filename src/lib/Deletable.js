@@ -14,19 +14,21 @@ async function deleteOne({ data, filters }) {
   }
 
   return {
-    save: copy,
+    save: data,
     payload: toDelete,
   };
 }
 
 async function deleteMany({ data, filters }) {
-  const filtered = data.filter((record) =>
-    matchCondition(record, filters).includes(false)
-  );
+  const deletedIds = [];
+  const filtered = data.map((record) => {
+    if (matchCondition(record, filters).includes(false)) return record;
+    deletedIds.push(record._id);
+  });
 
   return {
     save: filtered,
-    payload: `Deleted records cound: ${data.length - filtered.length}`,
+    payload: deletedIds,
   };
 }
 

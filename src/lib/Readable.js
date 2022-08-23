@@ -11,7 +11,7 @@ async function findOne({ data, filters, runPostParser }) {
   }
 
   return {
-    payload: found ? runPostParser([found]) : null,
+    payload: found ? runPostParser([found])[0] : null,
   };
 }
 
@@ -27,11 +27,11 @@ async function find({ data, filters, runPostParser }) {
   };
 }
 
-async function count() {
-  const res = (await find()) || [];
+async function count({ data, filters, runPostParser }) {
+  const { payload } = await find({ data, filters, runPostParser });
 
   return {
-    payload: res.length,
+    payload: payload.length,
   };
 }
 

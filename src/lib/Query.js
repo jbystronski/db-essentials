@@ -23,8 +23,10 @@ create = ({ connection, url, body }) => {
 
         url = parseEncodedUri(url);
 
+        const collection = (await getCollection(getUrlSegments(url)[0])) || [];
+
         const parser = Parser.create(
-          (collectiom = (await getCollection(getUrlSegments(url)[0])) || []),
+          collection,
           getParams(url),
           body ? JSON.parse(body) : null
         );

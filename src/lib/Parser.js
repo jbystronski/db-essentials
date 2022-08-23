@@ -37,7 +37,7 @@ const ARRAY_KEYS = [
 
 const isOperator = (key) => key.startsWith("_") && key !== "_id";
 
-const parseValue = (v, k) => {
+const mapStringValue = (v, k) => {
   if (typeof v !== "string") return v;
 
   // is value comma separated , if so turn into array
@@ -76,7 +76,7 @@ const parseParams = (params, container = {}) => {
   try {
     for (const [index, param] of params.entries()) {
       let [k, v] = param.split("=");
-      const parsedValue = parseValue(v, k);
+      const parsedValue = mapStringValue(v, k);
       let kparts = k.split(".");
 
       if (kparts.length === 1) {
@@ -131,6 +131,7 @@ const create = (collection, params, body) => {
     async run(action) {
       let queries = {};
       const filters = {};
+      const postParsersQueueOrder = [];
       const initialParsersQueue = [];
       const postParsersQueue = [];
 
@@ -150,10 +151,18 @@ const create = (collection, params, body) => {
         }
 
         for (const [k, v] of Object.entries(queries)) {
-          k in InitialParsers && initialParsersQueue.push(InitialParsers[k]);
+          if (k in InitialParsers) initialParsersQueue.push(k);
 
-          k in PostParsers && postParsersQueue.push(PostParsers[k]);
+          if (k in PostParsers) postParsersQueueOrder.push(k);
         }
+
+        postParsersQueueOrder
+          .sort((a, b) =>
+            PostParsers.PRIORITIES[a] > PostParsers.PRIORITIES[b] ? 1 : -1
+          )
+          .forEach((fnKey) => {
+            fnKey in PostParsers && postParsersQueue.push(PostParsers[fnKey]);
+          });
 
         if ("_save" in queries) {
           filters["_save"] = JSON.parse(JSON.stringify(queries["_save"]));
@@ -173,19 +182,13 @@ const create = (collection, params, body) => {
           return await method({
             data: runParserFunctions(
               initialParsersQueue,
-              JSON.parse(JSON.stringify(this.collection)),
+              this.collection,
               queries
             ),
             filters: filters,
             queries: queries,
             runPostParser: (data) =>
-              runParserFunctions(
-                postParsersQueue.sort((a, b) =>
-                  PostParsers.PRIORITIES[a] > PostParsers.PRIORITIES[b] ? 1 : -1
-                ),
-                data,
-                queries
-              ),
+              runParserFunctions(postParsersQueue, data, queries),
           });
         }
         return `Unknown operation: ${action}`;

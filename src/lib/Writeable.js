@@ -2,7 +2,7 @@ async function insert({ data, filters }) {
   const toSave =
     "_save" in filters && Array.isArray(filters["_save"])
       ? filters["_save"]
-      : [filters];
+      : [filters["_save"]];
 
   let lastId = data.length ? data[data.length - 1]["_id"] + 1 : 1;
 

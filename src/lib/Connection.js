@@ -4,7 +4,8 @@ let active = {};
 
 const getCollection = async (db, name) => {
   try {
-    return JSON.parse(await fs.readFile(`${db}/${name}.json`));
+    const coll = JSON.parse(await fs.readFile(`${db}/${name}.json`));
+    return JSON.parse(JSON.stringify(coll));
   } catch (error) {
     if (error.code === "ENOENT") {
       console.log(`Collection "${name}" doesn't exist yet`);
@@ -35,8 +36,7 @@ const dropCollection = async (db, name) =>
 
 exports.create = async ({ database, mode, label }) => {
   if (active.hasOwnProperty(label)) {
-    console.log(`Connection with label: ${label} already exists`);
-    return;
+    return active[label];
   }
 
   const db = path.resolve(database);
