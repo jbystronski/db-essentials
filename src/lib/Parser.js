@@ -106,6 +106,7 @@ const parseParams = (params, container = {}) => {
 };
 
 const runParserFunctions = (queue, data, queries) => {
+  console.log(queue);
   if (queue.length) {
     try {
       for (const fn of queue) {
@@ -151,7 +152,7 @@ const create = (collection, params, body) => {
         }
 
         for (const [k, v] of Object.entries(queries)) {
-          if (k in InitialParsers) initialParsersQueue.push(k);
+          if (k in InitialParsers) initialParsersQueue.push(InitialParsers[k]);
 
           if (k in PostParsers) postParsersQueueOrder.push(k);
         }
