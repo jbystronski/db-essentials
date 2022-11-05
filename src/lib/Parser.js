@@ -106,7 +106,6 @@ const parseParams = (params, container = {}) => {
 };
 
 const runParserFunctions = (queue, data, queries) => {
-  console.log(queue);
   if (queue.length) {
     try {
       for (const fn of queue) {

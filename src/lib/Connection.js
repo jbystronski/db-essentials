@@ -42,9 +42,9 @@ exports.create = async ({ database, mode, label }) => {
   const db = path.resolve(database);
 
   active[label] = {
-    label: label,
+    label,
     database: db,
-    mode: mode,
+    mode,
     getCollection: async (name) => await getCollection(db, name),
     getAllCollections: async () => await getAllCollections(db),
     dropCollection: async (name) => await dropCollection(db, name),
